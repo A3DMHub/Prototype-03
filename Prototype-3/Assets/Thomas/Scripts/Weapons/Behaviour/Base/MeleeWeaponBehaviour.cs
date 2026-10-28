@@ -17,34 +17,27 @@ public class MeleeWeaponBehaviour : MonoBehaviour
     {
         direction = dir;
 
-        // rotate weapon for dirs
+        const float directionThreshold = 0.0001f;
         float dirx = direction.x;
-        float diry = direction.y;
+        float diry = Mathf.Abs(direction.z) > directionThreshold && Mathf.Abs(direction.y) <= directionThreshold
+            ? direction.z
+            : direction.y;
 
         Vector3 rotation = transform.rotation.eulerAngles;
         rotation.x = -90f;
 
         transform.localPosition = new Vector3(0, 0, 1.5f);
 
-        // if(dirx < 0 && diry == 0) // left
+        // if (Mathf.Abs(dirx) > directionThreshold || Mathf.Abs(diry) > directionThreshold)
         // {
-        //     rotation.z = -90;
-        //     transform.localPosition = new Vector3(1.5f, 0, 0);
-        // }
-        // else if(dirx > 0 && diry == 0) // right
-        // {
-        //     rotation.z = 90;
-        //     transform.localPosition = new Vector3(-1.5f, 0, 0);
-        // }
-        // else if(dirx == 0 && diry > 0) // up
-        // {
-        //     rotation.z = -180;
-        //     transform.localPosition = new Vector3(0, 0, 1.5f);
-        // }
-        // else if(dirx == 0 && diry < 0) // down
-        // {
-        //     rotation.z = -180;
-        //     transform.localPosition = new Vector3(0, 0, -1.5f);
+        //     if (Mathf.Abs(dirx) >= Mathf.Abs(diry))
+        //     {
+        //         rotation.z = dirx < 0f ? -90f : 90f; // left or right
+        //     }
+        //     else
+        //     {
+        //         rotation.z = -180f; // up or down
+        //     }
         // }
 
         transform.rotation = Quaternion.Euler(rotation);

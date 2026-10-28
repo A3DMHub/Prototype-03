@@ -14,4 +14,23 @@ public class Behaviour_Knife : ProjectileWeaponBehaviour
     {
         transform.position += direction * weaponData.speed * Time.deltaTime;
     }
+
+    void OnTriggerEnter(Collider  other)
+    {   
+        if (other.CompareTag("Enemy"))
+        {
+            int pierceCount = weaponData.pierce;
+
+            if (pierceCount > 0)
+            {
+                pierceCount--;
+                Destroy(other.gameObject);  // todo hp damage instead
+            }
+            else
+            {
+                Destroy(other.gameObject);  // todo hp damage instead
+                Destroy(gameObject);
+            }
+        }
+    }
 }

@@ -18,6 +18,7 @@ MonoBehaviour:
   pierce: 0
   destroyTime: 1
   followPlayerDir: 1
+  attackDir: 0
   speed: 0
   projectileCount: 1
   projectileSpread: 0

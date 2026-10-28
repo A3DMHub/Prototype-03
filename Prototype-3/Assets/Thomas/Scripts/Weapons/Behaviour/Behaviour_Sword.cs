@@ -10,4 +10,11 @@ public class Behaviour_Sword : MeleeWeaponBehaviour
         base.Start();
     }
 
+    void OnTriggerEnter(Collider  other)
+    {
+        if (other.CompareTag("Enemy"))
+        {
+            Destroy(other.gameObject); // todo hp damage instead
+        }
+    }
 }
