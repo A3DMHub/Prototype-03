@@ -22,6 +22,8 @@ public class ProjectileWeaponBehaviour : MonoBehaviour
         float diry = direction.y;
 
         Vector3 rotation = transform.rotation.eulerAngles;
+        rotation.x = -90f;
+        rotation.y = 90f;
 
         if(dirx < 0 && diry == 0) // left
         {
