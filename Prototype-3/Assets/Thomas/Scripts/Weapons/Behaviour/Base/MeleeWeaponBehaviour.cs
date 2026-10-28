@@ -17,29 +17,16 @@ public class MeleeWeaponBehaviour : MonoBehaviour
     {
         direction = dir;
 
-        const float directionThreshold = 0.0001f;
-        float dirx = direction.x;
-        float diry = Mathf.Abs(direction.z) > directionThreshold && Mathf.Abs(direction.y) <= directionThreshold
-            ? direction.z
-            : direction.y;
-
-        Vector3 rotation = transform.rotation.eulerAngles;
-        rotation.x = -90f;
-
         transform.localPosition = new Vector3(0, 0, 1.5f);
 
-        // if (Mathf.Abs(dirx) > directionThreshold || Mathf.Abs(diry) > directionThreshold)
-        // {
-        //     if (Mathf.Abs(dirx) >= Mathf.Abs(diry))
-        //     {
-        //         rotation.z = dirx < 0f ? -90f : 90f; // left or right
-        //     }
-        //     else
-        //     {
-        //         rotation.z = -180f; // up or down
-        //     }
-        // }
+        Vector3 flatDirection = Vector3.ProjectOnPlane(direction, Vector3.up);
+        if (flatDirection.sqrMagnitude < 0.0001f)
+        {
+            return;
+        }
 
-        transform.rotation = Quaternion.Euler(rotation);
+        float yaw = Vector3.SignedAngle(Vector3.left, flatDirection.normalized, Vector3.up);
+        Quaternion flatSpriteRotation = Quaternion.Euler(-90f, 90f, 0f);
+        transform.rotation = Quaternion.AngleAxis(yaw, Vector3.up) * flatSpriteRotation;
     }
 }
