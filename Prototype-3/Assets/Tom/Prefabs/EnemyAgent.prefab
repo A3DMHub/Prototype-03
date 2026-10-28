@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 1844963848401388703}
   - component: {fileID: 4995187964129263937}
   - component: {fileID: 1219251188521175808}
-  - component: {fileID: 5820090184936181687}
+  - component: {fileID: 2713571927405373768}
   m_Layer: 0
   m_Name: EnemyAgent
   m_TagString: Untagged
@@ -115,7 +115,7 @@ CapsuleCollider:
   m_Height: 2
   m_Direction: 1
   m_Center: {x: 0, y: 0, z: 0}
---- !u!114 &5820090184936181687
+--- !u!114 &2713571927405373768
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -128,12 +128,5 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlowFieldEnemy
   flowField: {fileID: 0}
-  moveSpeed: 10
+  moveSpeed: 3.5
   turnSpeed: 8
-  neighbourRadius: 1.8
-  personalSpace: 1
-  separationStrength: 3.5
-  maxNeighbours: 16
-  enemyMask:
-    serializedVersion: 2
-    m_Bits: 4294967295

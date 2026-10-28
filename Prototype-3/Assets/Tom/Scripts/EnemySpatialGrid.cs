@@ -1,20 +1,98 @@
-
-using System.Collections.Generic;
+using Unity.Burst;
+using Unity.Collections;
+using Unity.Jobs;
+using Unity.Mathematics;
 using UnityEngine;
+
+public struct EnemyStaticData
+{
+    public float MoveSpeed;
+    public float TurnSpeed;
+    public float SteeringPhase;
+    public byte Valid;
+}
+
+[BurstCompile]
+public struct SpatialGridRebuildJob : IJob
+{
+    [ReadOnly] public NativeArray<float3> Positions;
+    [ReadOnly] public NativeArray<EnemyStaticData> Statics;
+    public int Count;
+
+    public float3 Origin;
+    public float CellSize;
+    public int Width;
+    public int Height;
+
+    public NativeArray<int> CellCounts;
+    public NativeArray<int> CellCursor;
+    public NativeArray<int> CellStart;
+    public NativeArray<int> SortedIndices;
+
+    public void Execute()
+    {
+        int cellCount = Width * Height;
+        for (int i = 0; i < cellCount; i++) CellCounts[i] = 0;
+
+        for (int i = 0; i < Count; i++)
+        {
+            if (Statics[i].Valid == 0) continue;
+            int cell = CellIndex(Positions[i]);
+            if (cell < 0) continue;
+            CellCounts[cell]++;
+        }
+
+        int sum = 0;
+        for (int i = 0; i < cellCount; i++)
+        {
+            CellStart[i] = sum;
+            sum += CellCounts[i];
+            CellCursor[i] = CellStart[i];
+        }
+        CellStart[cellCount] = sum;
+
+        for (int i = 0; i < Count; i++)
+        {
+            if (Statics[i].Valid == 0) continue;
+            int cell = CellIndex(Positions[i]);
+            if (cell < 0) continue;
+            int slot = CellCursor[cell]++;
+            SortedIndices[slot] = i;
+        }
+    }
+
+    private int CellIndex(float3 p)
+    {
+        int x = (int)math.floor((p.x - Origin.x) / CellSize);
+        int z = (int)math.floor((p.z - Origin.z) / CellSize);
+        if (x < 0 || x >= Width || z < 0 || z >= Height) return -1;
+        return z * Width + x;
+    }
+}
 
 public class EnemySpatialGrid : MonoBehaviour
 {
     public static EnemySpatialGrid Instance { get; private set; }
 
     [Header("Spatial Grid")]
-    [SerializeField, Min(0.25f)]
-    private float bucketSize = 2f;
+    [SerializeField, Min(0.25f)] private float bucketSize = 1.8f;
 
-    private readonly Dictionary<Vector2Int, List<FlowFieldEnemy>> buckets =
-        new Dictionary<Vector2Int, List<FlowFieldEnemy>>();
+    private NativeArray<int> cellStart;
+    private NativeArray<int> cellCounts;
+    private NativeArray<int> cellCursor;
+    private NativeArray<int> sortedIndices;
 
-    private readonly List<List<FlowFieldEnemy>> allBuckets =
-        new List<List<FlowFieldEnemy>>();
+    private int width;
+    private int height;
+    private float3 origin;
+    private bool allocated;
+
+    public float BucketSize => bucketSize;
+    public int Width => width;
+    public int Height => height;
+    public float3 Origin => origin;
+    public NativeArray<int> CellStart => cellStart;
+    public NativeArray<int> SortedIndices => sortedIndices;
 
     private void Awake()
     {
@@ -24,113 +102,77 @@ public class EnemySpatialGrid : MonoBehaviour
             enabled = false;
             return;
         }
-
         Instance = this;
     }
 
     private void OnDestroy()
     {
-        if (Instance == this)
-            Instance = null;
+        if (Instance == this) Instance = null;
+        DisposeArrays();
     }
 
-    private Vector2Int GetBucket(Vector3 position)
+    public void EnsureAllocated(float3 newOrigin, int newWidth, int newHeight)
     {
-        return new Vector2Int(
-            Mathf.FloorToInt(position.x / bucketSize),
-            Mathf.FloorToInt(position.z / bucketSize));
+        int cellCount = newWidth * newHeight;
+        if (allocated &&
+            width == newWidth &&
+            height == newHeight &&
+            origin.Equals(newOrigin) &&
+            cellStart.IsCreated &&
+            cellStart.Length == cellCount + 1)
+            return;
+
+        DisposeArrays();
+
+        origin = newOrigin;
+        width = newWidth;
+        height = newHeight;
+
+        cellStart = new NativeArray<int>(cellCount + 1, Allocator.Persistent);
+        cellCounts = new NativeArray<int>(cellCount, Allocator.Persistent);
+        cellCursor = new NativeArray<int>(cellCount, Allocator.Persistent);
+        sortedIndices = new NativeArray<int>(Mathf.Max(16, 1024), Allocator.Persistent);
+        allocated = true;
     }
 
-    private List<FlowFieldEnemy> GetOrCreateBucket(Vector2Int key)
+    public void EnsureSortedCapacity(int count)
     {
-        if (buckets.TryGetValue(key, out List<FlowFieldEnemy> bucket))
-            return bucket;
-
-        bucket = new List<FlowFieldEnemy>(8);
-        buckets.Add(key, bucket);
-        allBuckets.Add(bucket);
-        return bucket;
-    }
-
-    private void LateUpdate()
-    {
-        // Reuse the existing lists; do not allocate new buckets each frame.
-        for (int i = 0; i < allBuckets.Count; i++)
-            allBuckets[i].Clear();
-
-        IReadOnlyList<FlowFieldEnemy> enemies =
-            FlowFieldEnemy.ActiveEnemies;
-
-        for (int i = 0; i < enemies.Count; i++)
+        if (!sortedIndices.IsCreated || sortedIndices.Length < count)
         {
-            FlowFieldEnemy enemy = enemies[i];
-
-            if (enemy == null || !enemy.isActiveAndEnabled)
-                continue;
-
-            Vector2Int key = GetBucket(enemy.transform.position);
-            GetOrCreateBucket(key).Add(enemy);
+            if (sortedIndices.IsCreated) sortedIndices.Dispose();
+            sortedIndices = new NativeArray<int>(Mathf.Max(16, count), Allocator.Persistent);
         }
     }
 
-    public Vector3 GetSeparation(
-        FlowFieldEnemy requester,
-        Vector3 position,
-        float neighbourRadius,
-        float personalSpace,
-        int maxNeighbours)
+    public JobHandle ScheduleRebuild(
+        NativeArray<float3> positions,
+        NativeArray<EnemyStaticData> statics,
+        int count,
+        JobHandle dependency)
     {
-        Vector3 push = Vector3.zero;
-
-        if (requester == null || bucketSize <= 0f)
-            return push;
-
-        Vector2Int center = GetBucket(position);
-
-        int range = Mathf.CeilToInt(neighbourRadius / bucketSize);
-        int processed = 0;
-
-        for (int z = -range; z <= range; z++)
+        var job = new SpatialGridRebuildJob
         {
-            for (int x = -range; x <= range; x++)
-            {
-                Vector2Int key = new Vector2Int(
-                    center.x + x,
-                    center.y + z);
+            Positions = positions,
+            Statics = statics,
+            Count = count,
+            Origin = origin,
+            CellSize = bucketSize,
+            Width = width,
+            Height = height,
+            CellCounts = cellCounts,
+            CellCursor = cellCursor,
+            CellStart = cellStart,
+            SortedIndices = sortedIndices
+        };
+        return job.Schedule(dependency);
+    }
 
-                if (!buckets.TryGetValue(
-                    key, out List<FlowFieldEnemy> bucket))
-                    continue;
-
-                for (int i = 0; i < bucket.Count; i++)
-                {
-                    FlowFieldEnemy other = bucket[i];
-
-                    if (other == null || other == requester)
-                        continue;
-
-                    Vector3 offset =
-                        position - other.transform.position;
-
-                    offset.y = 0f;
-
-                    float distance = offset.magnitude;
-
-                    if (distance < 0.001f ||
-                        distance >= personalSpace)
-                        continue;
-
-                    float strength = 1f - distance / personalSpace;
-                    push += offset / distance * strength;
-
-                    processed++;
-
-                    if (processed >= maxNeighbours)
-                        return push;
-                }
-            }
-        }
-
-        return push;
+    private void DisposeArrays()
+    {
+        if (cellStart.IsCreated) cellStart.Dispose();
+        if (cellCounts.IsCreated) cellCounts.Dispose();
+        if (cellCursor.IsCreated) cellCursor.Dispose();
+        if (sortedIndices.IsCreated) sortedIndices.Dispose();
+        allocated = false;
     }
 }

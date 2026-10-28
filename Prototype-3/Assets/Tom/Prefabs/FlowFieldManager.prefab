@@ -9,7 +9,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 83711422029641067}
-  - component: {fileID: 4623723555209215303}
+  - component: {fileID: 6324094698828236129}
   m_Layer: 0
   m_Name: FlowFieldManager
   m_TagString: Untagged
@@ -32,7 +32,7 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &4623723555209215303
+--- !u!114 &6324094698828236129
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -48,11 +48,16 @@ MonoBehaviour:
   gridWorldSize: {x: 1000, y: 1000}
   cellSize: 2
   groundHeight: 0.5
-  chunkSizeCells: 32
   obstacleMask:
     serializedVersion: 2
-    m_Bits: 64
-  obstacleCheckRadius: 1
-  showGrid: 1
-  drawEveryNthCell: 2
-  arrowLength: 0.35
+    m_Bits: 0
+  obstacleCheckRadius: 0.8
+  obstacleChecksPerFrame: 4096
+  nodesPerFrame: 20000
+  directionCellsPerFrame: 30000
+  targetRebuildDistance: 1.5
+  cardinalDominanceThreshold: 1.6
+  directLineSamples: 24
+  showGrid: 0
+  drawEveryNthCell: 4
+  arrowLength: 0.5
