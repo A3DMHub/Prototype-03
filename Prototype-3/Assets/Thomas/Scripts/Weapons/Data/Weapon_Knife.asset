@@ -20,6 +20,6 @@ MonoBehaviour:
   followPlayerDir: 1
   attackDir: 0
   speed: 10
-  projectileCount: 3
+  projectileCount: 1
   projectileSpread: 45
   currentCooldown: 1.1453688

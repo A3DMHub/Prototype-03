@@ -7,7 +7,7 @@ public class WeaponScriptableObject : ScriptableObject
 {
     public GameObject prefab;
 
-    // general stats
+    [Header("General Stats")]
     public float damage; // damage on hit
     public float cooldown; // time between attacks
     public int pierce; // how many enemies the weapon can pierce through
@@ -16,13 +16,13 @@ public class WeaponScriptableObject : ScriptableObject
 
     public float attackDir; // the direction the weapon is facing when attacking if followPlayerDir is false (0 = up, 90 = right, 180 = down, 270 = left)
 
-    // ranged stats
+    [Header("Ranged Stats")]
     public float speed; // projectile speed
     public int projectileCount; // how many projectiles are shot at once
     public int projectileSpread; // the angle spread of the projectiles
 
-    // melee stats
+    [Header("Melee Stats")]
 
-    // misc
+    [Header("Misc Settings")]
     public float currentCooldown;
 }
