@@ -1,18 +1,12 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.InputSystem;
 
-public class ControllerActive_Bomb : ActiveWeaponController
+public class Controller_ActiveBomb : ActiveWeaponController
 {
     protected override void Start()
     {
         base.Start();
-    }
-
-    public override void OnActiveItem1(InputValue inputValue)
-    {
-        base.OnActiveItem1(inputValue);
     }
 
     protected override void Attack()
@@ -27,17 +21,17 @@ public class ControllerActive_Bomb : ActiveWeaponController
                     : 360f * i / weaponData.projectileCount; // if not following player dir, just spread evenly around the player
                 Vector3 direction = Quaternion.Euler(0, angle, 0) * transform.forward;
 
-                GameObject spawnedKnife = Instantiate(weaponData.prefab, transform.position, transform.rotation);
-                spawnedKnife.GetComponent<Behaviour_Knife>().DirectionCheck(direction);
+                GameObject spawnedBomb = Instantiate(weaponData.prefab, transform.position, transform.rotation);
+                spawnedBomb.GetComponent<BehaviourActive_Bomb>().DirectionCheck(direction);
             }
         }
         else
         {
-            GameObject spawnedKnife = Instantiate(weaponData.prefab, transform.position, transform.rotation);
+            GameObject spawnedBomb = Instantiate(weaponData.prefab, transform.position, transform.rotation);
             Vector3 direction = weaponData.followPlayerDir
                 ? transform.forward
                 : Quaternion.Euler(0f, weaponData.attackDir, 0f) * Vector3.forward;
-            spawnedKnife.GetComponent<Behaviour_Knife>().DirectionCheck(direction);
+            spawnedBomb.GetComponent<BehaviourActive_Bomb>().DirectionCheck(direction);
         }
     }
 

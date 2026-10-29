@@ -2,9 +2,8 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Controller_Sword : WeaponController
+public class Controller_Sword : MeleeWeaponController
 {
-    public GameObject player;
 
     protected override void Start()
     {

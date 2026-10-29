@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Controller_Knife : WeaponController
+public class Controller_Knife : ProjectileWeaponController
 {
     protected override void Start()
     {

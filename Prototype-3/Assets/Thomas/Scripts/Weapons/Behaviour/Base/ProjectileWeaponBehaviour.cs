@@ -5,7 +5,7 @@ using UnityEngine;
 public class ProjectileWeaponBehaviour : MonoBehaviour
 {
     [Header("Weapon Stats")]
-    public WeaponScriptableObject weaponData;
+    public ProjectileWeaponScriptableObject weaponData;
     
     protected Vector3 direction;
     protected virtual void Start()

@@ -5,12 +5,24 @@ using UnityEngine;
 public class ActiveWeaponBehaviour : MonoBehaviour
 {
     [Header("Weapon Stats")]
-    public WeaponScriptableObject weaponData;
+    public ActiveWeaponScriptableObject weaponData;
     
     protected Vector3 direction;
     protected virtual void Start()
     {
-        Destroy(gameObject, weaponData.destroyTime);
+        StartCoroutine(WaitForDestroyTime());
+    }
+
+    private IEnumerator WaitForDestroyTime()
+    {
+        yield return new WaitForSeconds(weaponData.destroyTime);
+
+        OnLifetimeExpired();
+    }
+
+    protected virtual void OnLifetimeExpired()
+    {
+        Destroy(gameObject);
     }
 
     public void DirectionCheck(Vector3 dir)
