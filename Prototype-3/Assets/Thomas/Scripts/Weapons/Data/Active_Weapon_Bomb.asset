@@ -1,0 +1,27 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8a128991d3a71914daca989c76ccde9a, type: 3}
+  m_Name: Active_Weapon_Bomb
+  m_EditorClassIdentifier: Assembly-CSharp::ActiveWeaponScriptableObject
+  prefab: {fileID: 7929389920313495872, guid: e28fa33c0f89b394aaeac0eafa8dc74b, type: 3}
+  explosionPrefab: {fileID: 5190909068096925118, guid: 943de44bff11570419aee5f5b398036d, type: 3}
+  damage: 0
+  cooldown: 2
+  windUpTime: 3
+  destroyTime: 1
+  range: 5
+  followPlayerDir: 1
+  attackDir: 0
+  speed: 10
+  projectileCount: 1
+  projectileSpread: 45
+  currentCooldown: 0.22635034

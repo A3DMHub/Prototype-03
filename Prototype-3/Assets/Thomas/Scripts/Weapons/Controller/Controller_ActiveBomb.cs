@@ -1,0 +1,38 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class Controller_ActiveBomb : ActiveWeaponController
+{
+    protected override void Start()
+    {
+        base.Start();
+    }
+
+    protected override void Attack()
+    {
+        base.Attack();
+        if (weaponData.projectileCount > 1)
+        {
+            for (int i = 0; i < weaponData.projectileCount; i++)
+            {
+                float angle = weaponData.followPlayerDir
+                    ? (weaponData.projectileSpread / 2f) - (weaponData.projectileSpread * i / (weaponData.projectileCount - 1))
+                    : 360f * i / weaponData.projectileCount; // if not following player dir, just spread evenly around the player
+                Vector3 direction = Quaternion.Euler(0, angle, 0) * transform.forward;
+
+                GameObject spawnedBomb = Instantiate(weaponData.prefab, transform.position, transform.rotation);
+                spawnedBomb.GetComponent<BehaviourActive_Bomb>().DirectionCheck(direction);
+            }
+        }
+        else
+        {
+            GameObject spawnedBomb = Instantiate(weaponData.prefab, transform.position, transform.rotation);
+            Vector3 direction = weaponData.followPlayerDir
+                ? transform.forward
+                : Quaternion.Euler(0f, weaponData.attackDir, 0f) * Vector3.forward;
+            spawnedBomb.GetComponent<BehaviourActive_Bomb>().DirectionCheck(direction);
+        }
+    }
+
+}

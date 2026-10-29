@@ -5,7 +5,7 @@ using UnityEngine;
 public class MeleeWeaponBehaviour : MonoBehaviour
 {
     [Header("Weapon Stats")]
-    public WeaponScriptableObject weaponData;
+    public MeleeWeaponScriptableObject weaponData;
     
     protected Vector3 direction;
     protected virtual void Start()
