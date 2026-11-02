@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public class NewMonoBehaviourScript : MonoBehaviour
+public class TimingScript : MonoBehaviour
 {
     private float TimeRemaining;
 
@@ -20,7 +20,7 @@ public class NewMonoBehaviourScript : MonoBehaviour
     void Update()
     {
         TimeRemaining -= TimeDecreaseSpeed*Time.deltaTime;
-        Mathf.Clamp(TimeRemaining, 0, 100);
+        TimeRemaining = Mathf.Clamp(TimeRemaining, 0, 100);
         Debug.Log(TimeRemaining);
 
         if (TimeRemaining <= 0)
@@ -29,12 +29,12 @@ public class NewMonoBehaviourScript : MonoBehaviour
         }
     }
 
-    void WindUp(int WindUpAmount)
+    public void WindUp(float WindUpAmount)
     {
         TimeRemaining += WindUpAmount;
     }
 
-    void PaySomeTime(float cost)
+    public void PaySomeTime(float cost)
     {
         TimeRemaining -= cost;
     }
