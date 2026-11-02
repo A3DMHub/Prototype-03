@@ -11,7 +11,8 @@ public class NewMonoBehaviourScript : MonoBehaviour
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
-        WindUp(100);
+        TimeRemaining = 1;
+        WindUp(99);
     }
 
 
@@ -21,6 +22,11 @@ public class NewMonoBehaviourScript : MonoBehaviour
         TimeRemaining -= TimeDecreaseSpeed*Time.deltaTime;
         Mathf.Clamp(TimeRemaining, 0, 100);
         Debug.Log(TimeRemaining);
+
+        if (TimeRemaining <= 0)
+        {
+            GameOver();
+        }
     }
 
     void WindUp(int WindUpAmount)
@@ -31,5 +37,10 @@ public class NewMonoBehaviourScript : MonoBehaviour
     void PaySomeTime(float cost)
     {
         TimeRemaining -= cost;
+    }
+
+    void GameOver()
+    {
+        //Game over script TODO
     }
 }
