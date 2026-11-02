@@ -1078,7 +1078,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 53845303905447495, guid: 0bccb33465fd803409c0ac1d3eb5a61e, type: 3}
       propertyPath: m_Enabled
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 53845303905447495, guid: 0bccb33465fd803409c0ac1d3eb5a61e, type: 3}
       propertyPath: weaponData
@@ -1086,7 +1086,7 @@ PrefabInstance:
       objectReference: {fileID: 11400000, guid: 06cf8d7d4b02aa3438d3b45a6354fae5, type: 2}
     - target: {fileID: 715101241341779789, guid: 0bccb33465fd803409c0ac1d3eb5a61e, type: 3}
       propertyPath: m_Enabled
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 715101241341779789, guid: 0bccb33465fd803409c0ac1d3eb5a61e, type: 3}
       propertyPath: weaponData
