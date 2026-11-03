@@ -7,11 +7,14 @@ public class PlayerHealth : MonoBehaviour
     public float maxHealth = 100f;
     public float currentHealth;
 
+    [Header("Damage Settings")]
+    public float damagePerHit = 10f; // Adjust how hard enemies hit
+
     [Header("UI Reference")]
     public Slider healthBarSlider;
 
     [Header("Game Over Integration")]
-    public GameObject gameOverPanel; // Drag your Game Over panel here later
+    public GameObject gameOverPanel;
 
     void Start()
     {
@@ -21,6 +24,16 @@ public class PlayerHealth : MonoBehaviour
         {
             healthBarSlider.maxValue = maxHealth;
             healthBarSlider.value = currentHealth;
+        }
+    }
+
+    // Detect collision with enemies
+    void OnCollisionEnter(Collision collision)
+    {
+        // Check if the object hitting us is tagged as an Enemy
+        if (collision.gameObject.CompareTag("Enemy") || collision.gameObject.name.Contains("Enemy"))
+        {
+            TakeDamage(damagePerHit);
         }
     }
 
@@ -56,7 +69,6 @@ public class PlayerHealth : MonoBehaviour
     {
         Debug.Log("Player has died!");
 
-        // If you have your GameUIController set up, trigger game over panel
         if (gameOverPanel != null)
         {
             gameOverPanel.SetActive(true);
