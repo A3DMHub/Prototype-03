@@ -9,6 +9,8 @@ public class GameUIController : MonoBehaviour
     [Header("UI Panels")]
     public GameObject pauseMenuPanel;
     public GameObject settingsPanel;
+    public GameObject audioPanel;
+    public GameObject graphicsPanel;
     public GameObject gameOverPanel;
     public GameObject victoryPanel;
 
@@ -46,40 +48,74 @@ public class GameUIController : MonoBehaviour
     public void PauseGame()
     {
         isPaused = true;
-        pauseMenuPanel.SetActive(true);
-        Time.timeScale = 0f; // Freeze game physics and clockwork timer
+        Time.timeScale = 0f; // Freeze game physics and timer
+
+        // Ensure panels open cleanly
+        if (pauseMenuPanel != null) pauseMenuPanel.SetActive(true);
+        if (settingsPanel != null) settingsPanel.SetActive(false);
+        if (audioPanel != null) audioPanel.SetActive(false);
+        if (graphicsPanel != null) graphicsPanel.SetActive(false);
     }
 
     public void ResumeGame()
     {
         isPaused = false;
-        pauseMenuPanel.SetActive(false);
-        if (settingsPanel != null) settingsPanel.SetActive(false);
         Time.timeScale = 1f; // Resume game
+
+        if (pauseMenuPanel != null) pauseMenuPanel.SetActive(false);
+        if (settingsPanel != null) settingsPanel.SetActive(false);
+        if (audioPanel != null) audioPanel.SetActive(false);
+        if (graphicsPanel != null) graphicsPanel.SetActive(false);
     }
 
+    // --- Settings Navigation ---
     public void OpenSettings()
     {
-        pauseMenuPanel.SetActive(false);
-        settingsPanel.SetActive(true);
+        if (pauseMenuPanel != null) pauseMenuPanel.SetActive(false);
+        if (settingsPanel != null) settingsPanel.SetActive(true);
     }
 
     public void CloseSettingsFromPause()
     {
-        settingsPanel.SetActive(false);
-        pauseMenuPanel.SetActive(true);
+        if (settingsPanel != null) settingsPanel.SetActive(false);
+        if (pauseMenuPanel != null) pauseMenuPanel.SetActive(true);
     }
 
+    public void OpenAudioSettings()
+    {
+        if (settingsPanel != null) settingsPanel.SetActive(false);
+        if (audioPanel != null) audioPanel.SetActive(true);
+    }
+
+    public void CloseAudioSettings()
+    {
+        if (audioPanel != null) audioPanel.SetActive(false);
+        if (settingsPanel != null) settingsPanel.SetActive(true);
+    }
+
+    public void OpenGraphicsSettings()
+    {
+        if (settingsPanel != null) settingsPanel.SetActive(false);
+        if (graphicsPanel != null) graphicsPanel.SetActive(true);
+    }
+
+    public void CloseGraphicsSettings()
+    {
+        if (graphicsPanel != null) graphicsPanel.SetActive(false);
+        if (settingsPanel != null) settingsPanel.SetActive(true);
+    }
+
+    // --- Game States ---
     public void TriggerGameOver()
     {
         Time.timeScale = 0f;
-        gameOverPanel.SetActive(true);
+        if (gameOverPanel != null) gameOverPanel.SetActive(true);
     }
 
     public void TriggerVictory()
     {
         Time.timeScale = 0f;
-        victoryPanel.SetActive(true);
+        if (victoryPanel != null) victoryPanel.SetActive(true);
     }
 
     public void RestartLevel()
@@ -92,5 +128,15 @@ public class GameUIController : MonoBehaviour
     {
         Time.timeScale = 1f;
         SceneManager.LoadScene(mainMenuSceneName);
+    }
+
+    public void QuitGame()
+    {
+        Debug.Log("Quitting Game...");
+        Application.Quit();
+
+#if UNITY_EDITOR
+        UnityEditor.EditorApplication.isPlaying = false;
+#endif
     }
 }
