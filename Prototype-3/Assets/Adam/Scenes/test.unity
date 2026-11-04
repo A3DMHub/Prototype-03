@@ -176,6 +176,9 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 519896690791895388, guid: 8f84211108a57c246b51d7ed66aec51e, type: 3}
+      insertIndex: 3
+      addedObject: {fileID: 758344535}
+    - targetCorrespondingSourceObject: {fileID: 519896690791895388, guid: 8f84211108a57c246b51d7ed66aec51e, type: 3}
       insertIndex: -1
       addedObject: {fileID: 758344528}
   m_SourcePrefab: {fileID: 100100000, guid: 8f84211108a57c246b51d7ed66aec51e, type: 3}
@@ -205,6 +208,19 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 3910863598171815895, guid: 8f84211108a57c246b51d7ed66aec51e, type: 3}
   m_PrefabInstance: {fileID: 547551019}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &758344535
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 758344527}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f2849d7177fa46a46a7df360188ab741, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TimingScript
+  TimeDecreaseSpeed: 1
 --- !u!1 &1002945419
 GameObject:
   m_ObjectHideFlags: 0
