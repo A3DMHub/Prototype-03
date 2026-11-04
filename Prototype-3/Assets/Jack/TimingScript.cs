@@ -2,7 +2,7 @@ using UnityEngine;
 
 public class TimingScript : MonoBehaviour
 {
-    private float TimeRemaining;
+    private float TimeRemaining = 1;
 
     //public float TimeAdd = 50;
     
@@ -11,7 +11,6 @@ public class TimingScript : MonoBehaviour
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
-        TimeRemaining = 1;
         WindUp(99);
     }
 
@@ -42,5 +41,6 @@ public class TimingScript : MonoBehaviour
     void GameOver()
     {
         //Game over script TODO
+
     }
 }
