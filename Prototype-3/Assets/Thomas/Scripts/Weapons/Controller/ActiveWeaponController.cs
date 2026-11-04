@@ -24,6 +24,8 @@ public class ActiveWeaponController : MonoBehaviour
 
     protected virtual void Update()
     {
+        if (Time.timeScale == 0f) return;
+        
         if (weaponData.currentCooldown <= 0)
         {
             weaponData.currentCooldown = 0;

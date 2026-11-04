@@ -16,6 +16,8 @@ public class MeleeWeaponController : MonoBehaviour
 
     protected virtual void Update()
     {
+        if (Time.timeScale == 0f) return;
+        
         weaponData.currentCooldown -= Time.deltaTime;
         if (weaponData.currentCooldown <= 0)
         {

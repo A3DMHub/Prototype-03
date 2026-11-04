@@ -13,6 +13,9 @@ public class FlowFieldEnemy : MonoBehaviour
     [SerializeField, Min(0f)] private float moveSpeed = 3.5f;
     [SerializeField, Min(0.1f)] private float turnSpeed = 8f;
 
+    [Header("Resources")]
+    public GameObject resourceDropPrefab;
+
     private Transform cachedTransform;
     private float individualSpeed;
     private float individualTurnSpeed;
@@ -45,6 +48,10 @@ public class FlowFieldEnemy : MonoBehaviour
     private void OnDisable()
     {
         if (!registered) return;
+
+        if (Application.isPlaying && resourceDropPrefab != null)
+            Instantiate(resourceDropPrefab, cachedTransform.position, Quaternion.identity);
+
         ActiveEnemies.Remove(this);
         registered = false;
     }
