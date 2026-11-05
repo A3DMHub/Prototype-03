@@ -13,6 +13,10 @@ public class FlowFieldEnemy : MonoBehaviour
     [SerializeField, Min(0f)] private float moveSpeed = 3.5f;
     [SerializeField, Min(0.1f)] private float turnSpeed = 8f;
 
+    [Header("Health")]
+    public int maxHealth = 100;
+    private int currentHealth;
+
     private Transform cachedTransform;
     private float individualSpeed;
     private float individualTurnSpeed;
@@ -29,6 +33,7 @@ public class FlowFieldEnemy : MonoBehaviour
 
     private void Awake()
     {
+        currentHealth = maxHealth;
         cachedTransform = transform;
         individualSpeed = moveSpeed * Random.Range(0.92f, 1.08f);
         individualTurnSpeed = turnSpeed * Random.Range(0.85f, 1.15f);
@@ -47,5 +52,21 @@ public class FlowFieldEnemy : MonoBehaviour
         if (!registered) return;
         ActiveEnemies.Remove(this);
         registered = false;
+    }
+
+    public void TakeDamage(int damage)
+    {
+        //Can be updated later to include and resistances
+        currentHealth -= damage;
+        if (currentHealth <= 0)
+        {
+            KillEnemy();
+        }
+    }
+
+    private void KillEnemy()
+    {
+        //Change this if we want to add a ragdoll
+        Destroy(gameObject);
     }
 }
