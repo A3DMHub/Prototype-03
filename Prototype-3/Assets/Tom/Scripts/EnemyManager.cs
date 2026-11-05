@@ -1,9 +1,17 @@
+using System.Collections.Generic;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Jobs;
+
+public struct AggroSourceData
+{
+    public float3 Position;
+    public float RadiusSqr;
+    public int Priority;
+}
 
 [BurstCompile]
 public struct SteeringJob : IJobParallelFor
@@ -27,6 +35,10 @@ public struct SteeringJob : IJobParallelFor
     public float3 FlowTargetPosition;
     public byte DirectSteeringEnabled;
     public int DirectLineSamples;
+
+    // Aggro sources (weapons, lures). Checked before the flow field.
+    [ReadOnly] public NativeArray<AggroSourceData> AggroSources;
+    public int AggroSourceCount;
 
     // Spatial grid snapshot
     [ReadOnly] public NativeArray<int> CellStart;
@@ -66,25 +78,50 @@ public struct SteeringJob : IJobParallelFor
         }
 
         float3 position = Positions[i];
-        float3 flow = SampleFlow(position);
+        float3 steeringBase;
 
-        float3 steeringBase = flow;
-
-        if (DirectSteeringEnabled == 1 &&
-            TryDirectDirection(position, out float3 direct))
+        // Aggro sources take priority over the player. If one is in range
+        // and has line of sight, beeline to it instead of using the flow field.
+        if (AggroSourceCount > 0 &&
+            TryGetAggroTarget(position, out float3 aggroTarget))
         {
-            float w = math.saturate(DirectSteeringWeight);
-            if (math.lengthsq(flow) > 0.0001f)
-                steeringBase = math.lerp(flow, direct, w);
-            else
-                steeringBase = direct * w;
-        }
+            float3 toTarget = aggroTarget - position;
+            toTarget.y = 0f;
+            float sqr = math.lengthsq(toTarget);
 
-        if (math.lengthsq(steeringBase) > 0.0001f)
-            steeringBase = math.normalize(steeringBase);
+            if (sqr < 0.0001f)
+            {
+                // On top of the target; stop moving.
+                Directions[i] = float3.zero;
+                TargetRotations[i] = quaternion.identity;
+                return;
+            }
+
+            steeringBase = toTarget * math.rsqrt(sqr);
+        }
         else
+        {
+            // Existing player-tracking logic, unchanged.
+            float3 flow = SampleFlow(position);
             steeringBase = flow;
 
+            if (DirectSteeringEnabled == 1 &&
+                TryDirectDirection(position, out float3 direct))
+            {
+                float w = math.saturate(DirectSteeringWeight);
+                if (math.lengthsq(flow) > 0.0001f)
+                    steeringBase = math.lerp(flow, direct, w);
+                else
+                    steeringBase = direct * w;
+            }
+
+            if (math.lengthsq(steeringBase) > 0.0001f)
+                steeringBase = math.normalize(steeringBase);
+            else
+                steeringBase = flow;
+        }
+
+        // Separation, wander, and output are the same for both modes.
         float3 separation = ComputeSeparation(i, position);
 
         float3 lateral = new float3(-steeringBase.z, 0f, steeringBase.x);
@@ -107,6 +144,37 @@ public struct SteeringJob : IJobParallelFor
 
         Directions[i] = direction;
         TargetRotations[i] = quaternion.LookRotationSafe(direction, math.up());
+    }
+
+    private bool TryGetAggroTarget(float3 pos, out float3 target)
+    {
+        target = float3.zero;
+
+        int bestPriority = int.MinValue;
+        float bestSqr = float.MaxValue;
+        bool found = false;
+
+        for (int s = 0; s < AggroSourceCount; s++)
+        {
+            AggroSourceData src = AggroSources[s];
+
+            if (src.Priority < bestPriority) continue;
+
+            float3 offset = src.Position - pos;
+            offset.y = 0f;
+            float sqr = math.lengthsq(offset);
+
+            if (sqr > src.RadiusSqr) continue;
+            if (src.Priority == bestPriority && sqr >= bestSqr) continue;
+            if (!IsLineWalkable(pos, src.Position)) continue;
+
+            bestPriority = src.Priority;
+            bestSqr = sqr;
+            target = src.Position;
+            found = true;
+        }
+
+        return found;
     }
 
     private float3 SampleFlow(float3 pos)
@@ -147,7 +215,6 @@ public struct SteeringJob : IJobParallelFor
 
         result = result * math.rsqrt(lenSq);
 
-        // Pull intermediate directions toward the dominant cardinal axis.
         float suppress = math.saturate(DiagonalSuppressionFactor);
         if (suppress < 0.999f)
         {
@@ -195,11 +262,6 @@ public struct SteeringJob : IJobParallelFor
         float dist = math.sqrt(sqr);
         direction = toTarget / dist;
 
-        // In an open field the grid-path cost equals the straight-line distance
-        // scaled to cost units: dist / cellSize * 100. Any detour (a wall, a
-        // corner, an obstacle cluster) inflates cellDist beyond that estimate.
-        // If cellDist is significantly larger, the path is NOT direct — fall
-        // back to the flow field.
         float estimatedCost = dist * FlowInvCellSize * 100f;
         if (cellDist > estimatedCost * 1.15f + 200f) return false;
 
@@ -461,6 +523,11 @@ public class EnemyManager : MonoBehaviour
     private NativeArray<float3> directions;
     private NativeArray<quaternion> targetRotations;
 
+    private NativeArray<AggroSourceData> aggroSourcesNative;
+    private int cachedAggroSourceCount;
+    private readonly List<EnemyAggroSource> aggroSourcesBuffer =
+        new List<EnemyAggroSource>(16);
+
     private int cachedCount = -1;
     private bool setupDirty;
     private JobHandle frameHandle;
@@ -517,19 +584,19 @@ public class EnemyManager : MonoBehaviour
 
         if (!flowField.HasNativeData)
         {
-            // Flow field is still sampling obstacles or building the first
-            // field. There is nothing valid to move toward yet.
             EnemyManagerPerformance.LastEnemyCount = cachedCount;
             EnemyManagerPerformance.LastUpdateMs =
                 (Time.realtimeSinceStartupAsDouble - startTime) * 1000.0;
             return;
         }
 
+        // Refresh the aggro source list every frame. The NativeArray is
+        // guaranteed to exist (at least 4 slots) so the job safety check
+        // never sees an unconstructed container.
+        UpdateAggroSources();
+
         FlowFieldSnapshot flowSnapshot = flowField.CreateSnapshot(directTargetSteeringWeight > 0f);
 
-        // EnemyManager is the authoritative source for the direct-steering
-        // sample count. FlowFieldGrid keeps its own default only as a fallback
-        // for callers that read the snapshot without going through here.
         flowSnapshot.DirectLineSamples = Mathf.Max(4, directLineSamples);
 
         // Spatial grid must fit inside the flow field bounds.
@@ -566,6 +633,9 @@ public class EnemyManager : MonoBehaviour
             FlowTargetPosition = flowSnapshot.TargetPosition,
             DirectSteeringEnabled = flowSnapshot.DirectSteeringEnabled,
             DirectLineSamples = flowSnapshot.DirectLineSamples,
+
+            AggroSources = aggroSourcesNative,
+            AggroSourceCount = cachedAggroSourceCount,
 
             CellStart = spatialGrid.CellStart,
             SortedIndices = spatialGrid.SortedIndices,
@@ -630,6 +700,47 @@ public class EnemyManager : MonoBehaviour
         }
     }
 
+    private void UpdateAggroSources()
+    {
+        List<EnemyAggroSource> sources = EnemyAggroSource.ActiveSources;
+
+        aggroSourcesBuffer.Clear();
+        for (int i = 0; i < sources.Count; i++)
+        {
+            EnemyAggroSource src = sources[i];
+            if (src != null && src.isActiveAndEnabled)
+                aggroSourcesBuffer.Add(src);
+        }
+
+        int count = aggroSourcesBuffer.Count;
+
+        // The array must always be created before scheduling the job, even
+        // if count is 0. Unity rejects jobs that reference unconstructed
+        // NativeArrays regardless of whether they are accessed.
+        int neededCapacity = Mathf.Max(4, count);
+
+        if (!aggroSourcesNative.IsCreated || aggroSourcesNative.Length < neededCapacity)
+        {
+            if (aggroSourcesNative.IsCreated) aggroSourcesNative.Dispose();
+            aggroSourcesNative = new NativeArray<AggroSourceData>(
+                neededCapacity, Allocator.Persistent);
+        }
+
+        for (int i = 0; i < count; i++)
+        {
+            EnemyAggroSource src = aggroSourcesBuffer[i];
+            Vector3 p = src.Position;
+            aggroSourcesNative[i] = new AggroSourceData
+            {
+                Position = new float3(p.x, p.y, p.z),
+                RadiusSqr = src.RadiusSqr,
+                Priority = src.Priority
+            };
+        }
+
+        cachedAggroSourceCount = count;
+    }
+
     private bool EnsureSetup()
     {
         int liveCount = FlowFieldEnemy.ActiveEnemies.Count;
@@ -643,7 +754,6 @@ public class EnemyManager : MonoBehaviour
         if (!setupDirty && liveCount == cachedCount)
             return true;
 
-        // Resolve flow field.
         if (flowField == null)
         {
             for (int i = 0; i < liveCount; i++)
@@ -710,7 +820,9 @@ public class EnemyManager : MonoBehaviour
         if (positions.IsCreated) positions.Dispose();
         if (directions.IsCreated) directions.Dispose();
         if (targetRotations.IsCreated) targetRotations.Dispose();
+        if (aggroSourcesNative.IsCreated) aggroSourcesNative.Dispose();
         cachedCount = -1;
+        cachedAggroSourceCount = 0;
     }
 }
 
