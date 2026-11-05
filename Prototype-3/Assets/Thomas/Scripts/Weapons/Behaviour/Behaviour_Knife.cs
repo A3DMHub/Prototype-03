@@ -24,11 +24,11 @@ public class Behaviour_Knife : ProjectileWeaponBehaviour
             if (pierceCount > 0)
             {
                 pierceCount--;
-                Destroy(other.gameObject);  // todo hp damage instead
+                other.GetComponent<FlowFieldEnemy>().TakeDamage((int) weaponData.damage);
             }
             else
             {
-                Destroy(other.gameObject);  // todo hp damage instead
+                other.GetComponent<FlowFieldEnemy>().TakeDamage((int) weaponData.damage);
                 Destroy(gameObject);
             }
         }

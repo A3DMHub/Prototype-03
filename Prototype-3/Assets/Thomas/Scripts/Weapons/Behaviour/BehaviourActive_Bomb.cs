@@ -40,7 +40,7 @@ public class BehaviourActive_Bomb : ActiveWeaponBehaviour
         {
             if (hitCollider.CompareTag("Enemy"))
             {
-                Destroy(hitCollider.gameObject); // todo hp damage
+                hitCollider.gameObject.GetComponent<FlowFieldEnemy>().TakeDamage((int) weaponData.damage);
             }
         }
 

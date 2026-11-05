@@ -14,7 +14,7 @@ public class Behaviour_Sword : MeleeWeaponBehaviour
     {
         if (other.CompareTag("Enemy"))
         {
-            Destroy(other.gameObject); // todo hp damage instead
+            other.GetComponent<FlowFieldEnemy>().TakeDamage((int) weaponData.damage);
         }
     }
 }

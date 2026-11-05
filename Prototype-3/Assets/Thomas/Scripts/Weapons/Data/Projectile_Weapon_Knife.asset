@@ -14,18 +14,18 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ProjectileWeaponScriptableObject
   prefab: {fileID: 7929389920313495872, guid: d0311509053a4814aa1188b1172be963, type: 3}
   weaponName: Knife
-  damage: 0
+  damage: 100
   cooldown: 2
   pierce: 0
   speed: 10
-  projectileCount: 1
+  projectileCount: 5
   projectileSpread: 45
   destroyTime: 2
   followPlayerDir: 1
   attackDir: 0
-  upgradeTier: 3
+  upgradeTier: 0
   upgrades:
   - {fileID: 11400000, guid: 8c56ae1f6dd032343ae1648f57743d36, type: 2}
   - {fileID: 11400000, guid: 074be1044b3547f4bb1321925b78db5e, type: 2}
   - {fileID: 11400000, guid: 30bfb30bf63764443b6f92f24d83ce2f, type: 2}
-  currentCooldown: 0.15253006
+  currentCooldown: 1.0158433

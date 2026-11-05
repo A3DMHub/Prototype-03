@@ -14,9 +14,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::MeleeWeaponScriptableObject
   prefab: {fileID: 3987477043170021866, guid: d24cf458f2b46b949ac6d90c2ee586ba, type: 3}
   weaponName: Sword
-  damage: 0
+  damage: 100
   cooldown: 1
   destroyTime: 0.5
   followPlayerDir: 1
   attackDir: 0
+  upgradeTier: 0
+  upgrades: []
   currentCooldown: 0
