@@ -6,6 +6,8 @@ public class MainMenuController : MonoBehaviour
     [Header("Menu Panels")]
     public GameObject mainButtonsPanel;
     public GameObject settingsPanel;
+    public GameObject audioPanel;
+    public GameObject graphicsPanel;
 
     [Header("Level Settings")]
     public string gameSceneName = "SampleScene";
@@ -28,10 +30,34 @@ public class MainMenuController : MonoBehaviour
         mainButtonsPanel.SetActive(true);
     }
 
+    public void OpenAudioSettings()
+    {
+        settingsPanel.SetActive(false);
+        audioPanel.SetActive(true);
+    }
+
+    public void CloseAudioSettings()
+    {
+        audioPanel.SetActive(false);
+        settingsPanel.SetActive(true);
+    }
+
+    public void OpenGraphicsSettings()
+    {
+        settingsPanel.SetActive(false);
+        graphicsPanel.SetActive(true);
+    }
+
+    public void CloseGraphicsSettings()
+    {
+        graphicsPanel.SetActive(false);
+        settingsPanel.SetActive(true);
+    }
+
+    // --- Quit ---
     public void QuitGame()
     {
         Debug.Log("Quitting Game...");
-
         Application.Quit();
 
 #if UNITY_EDITOR

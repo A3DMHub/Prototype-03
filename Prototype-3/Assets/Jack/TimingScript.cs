@@ -1,8 +1,8 @@
 using UnityEngine;
 
-public class NewMonoBehaviourScript : MonoBehaviour
+public class TimingScript : MonoBehaviour
 {
-    private float TimeRemaining;
+    private float TimeRemaining = 1;
 
     //public float TimeAdd = 50;
     
@@ -11,7 +11,7 @@ public class NewMonoBehaviourScript : MonoBehaviour
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
-        WindUp(100);
+        WindUp(99);
     }
 
 
@@ -19,17 +19,28 @@ public class NewMonoBehaviourScript : MonoBehaviour
     void Update()
     {
         TimeRemaining -= TimeDecreaseSpeed*Time.deltaTime;
-        Mathf.Clamp(TimeRemaining, 0, 100);
+        TimeRemaining = Mathf.Clamp(TimeRemaining, 0, 100);
         Debug.Log(TimeRemaining);
+
+        if (TimeRemaining <= 0)
+        {
+            GameOver();
+        }
     }
 
-    void WindUp(int WindUpAmount)
+    public void WindUp(float WindUpAmount)
     {
         TimeRemaining += WindUpAmount;
     }
 
-    void PaySomeTime(float cost)
+    public void PaySomeTime(float cost)
     {
         TimeRemaining -= cost;
+    }
+
+    void GameOver()
+    {
+        //Game over script TODO
+
     }
 }
