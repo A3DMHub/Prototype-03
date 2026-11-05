@@ -131,12 +131,12 @@ GameObject:
   - component: {fileID: 39054407}
   - component: {fileID: 39054406}
   m_Layer: 0
-  m_Name: 
+  m_Name: WeaponName
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &39054405
 RectTransform:
   m_ObjectHideFlags: 0
@@ -2085,12 +2085,12 @@ GameObject:
   m_Component:
   - component: {fileID: 1456771221}
   m_Layer: 0
-  m_Name: 
+  m_Name: Fill Area
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &1456771221
 RectTransform:
   m_ObjectHideFlags: 0
@@ -2596,6 +2596,7 @@ GameObject:
   - component: {fileID: 2130002452}
   - component: {fileID: 2130002451}
   - component: {fileID: 2130002455}
+  - component: {fileID: 2130002456}
   m_Layer: 0
   m_Name: Camera
   m_TagString: MainCamera
@@ -2733,6 +2734,19 @@ MonoBehaviour:
   m_Script: {fileID: 0}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!114 &2130002456
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2130002450}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fc5e71da53ac47f4a810ca30185c2a9d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CameraTrackPlayer
+  player: {fileID: 1168348206}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
