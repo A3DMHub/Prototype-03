@@ -45,7 +45,7 @@ GameObject:
   - component: {fileID: 284605764073114575}
   - component: {fileID: 6115492514890858631}
   - component: {fileID: 5811970450833367066}
-  m_Layer: 3
+  m_Layer: 5
   m_Name: Background
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -119,7 +119,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4792242593078931519}
   - component: {fileID: 241885287084281236}
-  m_Layer: 3
+  m_Layer: 5
   m_Name: PlayerHealthBar
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -269,7 +269,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1009609665796132457}
-  m_Layer: 3
+  m_Layer: 5
   m_Name: Fill Area
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -312,6 +312,8 @@ GameObject:
   - component: {fileID: 825648476881739881}
   - component: {fileID: 3986802854787980628}
   - component: {fileID: 7792841441214786117}
+  - component: {fileID: 2668583167610054465}
+  - component: {fileID: 2615074032860329943}
   m_Layer: 3
   m_Name: Player
   m_TagString: Player
@@ -504,6 +506,37 @@ MonoBehaviour:
   damagePerHit: 10
   healthBarSlider: {fileID: 241885287084281236}
   gameOverPanel: {fileID: 0}
+--- !u!114 &2668583167610054465
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3006430319618558757}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 244851afca4e8084189e343170566b00, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: '::'
+  timeResource: 15
+  expResource: 0
+  timeResourceCanvas: {fileID: 0}
+  expResourceCanvas: {fileID: 0}
+  expBar: {fileID: 0}
+--- !u!114 &2615074032860329943
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3006430319618558757}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5dbff13a915f1ad44924c4b8c694dd7a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: '::'
+  playerLevel: 0
+  expRequiredForUpgrade: 5
 --- !u!1 &4208698898172608721
 GameObject:
   m_ObjectHideFlags: 0
@@ -626,7 +659,7 @@ GameObject:
   - component: {fileID: 7833324017074444272}
   - component: {fileID: 9066464622464222749}
   - component: {fileID: 4448120161324056783}
-  m_Layer: 3
+  m_Layer: 5
   m_Name: HealthCanvas
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -641,7 +674,7 @@ RectTransform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4903386227863119409}
   m_LocalRotation: {x: 0.7071068, y: -0, z: -0, w: 0.7071068}
-  m_LocalPosition: {x: 0, y: 0, z: 1.87562}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 0.05, y: 0.05, z: 0.05}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -650,7 +683,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 90, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: -0.4932, y: -1.15}
+  m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 150, y: 20}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!223 &4797914840751625098
@@ -670,7 +703,7 @@ Canvas:
   m_OverrideSorting: 0
   m_OverridePixelPerfect: 0
   m_SortingBucketNormalizedSize: 0
-  m_VertexColorAlwaysGammaSpace: 0
+  m_VertexColorAlwaysGammaSpace: 1
   m_AdditionalShaderChannelsFlag: 0
   m_UpdateRectTransformForStandalone: 0
   m_SortingLayerID: 0
@@ -741,7 +774,7 @@ GameObject:
   - component: {fileID: 703075832941374286}
   - component: {fileID: 7738681736888452825}
   - component: {fileID: 1858605841749488481}
-  m_Layer: 3
+  m_Layer: 5
   m_Name: Fill
   m_TagString: Untagged
   m_Icon: {fileID: 0}

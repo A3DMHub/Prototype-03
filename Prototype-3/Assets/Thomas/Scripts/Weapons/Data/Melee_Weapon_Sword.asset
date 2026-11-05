@@ -13,13 +13,10 @@ MonoBehaviour:
   m_Name: Melee_Weapon_Sword
   m_EditorClassIdentifier: Assembly-CSharp::MeleeWeaponScriptableObject
   prefab: {fileID: 3987477043170021866, guid: d24cf458f2b46b949ac6d90c2ee586ba, type: 3}
+  weaponName: Sword
   damage: 0
   cooldown: 1
-  pierce: 0
   destroyTime: 0.5
   followPlayerDir: 1
   attackDir: 0
-  speed: 0
-  projectileCount: 1
-  projectileSpread: 0
   currentCooldown: 0

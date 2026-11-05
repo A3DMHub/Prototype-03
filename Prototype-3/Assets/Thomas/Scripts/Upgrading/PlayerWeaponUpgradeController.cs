@@ -9,9 +9,14 @@ public class PlayerWeaponUpgradeController : MonoBehaviour
     public int expRequiredForUpgrade = 5;
     private PlayerResourceController playerResourceController;
 
+    [Header("UI")]
+    public Canvas levelUpMenu;
+    private LevelUpMenu levelUpMenuScript;
+
     void Start()
     {
         playerResourceController = GetComponent<PlayerResourceController>();
+        levelUpMenuScript = levelUpMenu.GetComponent<LevelUpMenu>();
     }
 
     void Update()
@@ -24,13 +29,14 @@ public class PlayerWeaponUpgradeController : MonoBehaviour
 
     public void onLevelUp()
     {
-            playerLevel++;
+        playerLevel++;
 
-            Debug.Log("[PlayerWeaponUpgradeController] Player level increased to: " + playerLevel);
+        Debug.Log("[PlayerWeaponUpgradeController] Player level increased to: " + playerLevel);
+        
+        levelUpMenuScript.StartUI();
+        Time.timeScale = 0f; // pause game so you dont die upgrading / getting weapons
 
-            Time.timeScale = 0f; // pause game so you dont die upgrading / getting weapons
-
-            playerResourceController.expResource -= expRequiredForUpgrade;
-            expRequiredForUpgrade = Mathf.CeilToInt(expRequiredForUpgrade * 1.5f); // 50% increase in req exp for next lvl
+        playerResourceController.expResource -= expRequiredForUpgrade;
+        expRequiredForUpgrade = Mathf.CeilToInt(expRequiredForUpgrade * 1.5f); // 50% increase in req exp for next lvl
     }
 }

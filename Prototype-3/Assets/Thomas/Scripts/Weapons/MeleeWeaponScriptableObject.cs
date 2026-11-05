@@ -6,6 +6,7 @@ using UnityEngine;
 public class MeleeWeaponScriptableObject : ScriptableObject
 {
     public GameObject prefab;
+    public string weaponName;
 
     [Header("Stats")]
     public float damage; // damage on hit
@@ -13,6 +14,10 @@ public class MeleeWeaponScriptableObject : ScriptableObject
     public float destroyTime; // weapon lifetime
     public bool followPlayerDir; // if the weapon uses the player's rotation/direction or not
     public float attackDir; // the direction the weapon is facing when attacking if followPlayerDir is false (0 = up, 90 = right, 180 = down, 270 = left)
+
+    [Header("Upgrades")]
+    public int upgradeTier;
+    public List<WeaponUpgradeBasic> upgrades;
 
     [Header("Misc Settings")]
     public float currentCooldown;
