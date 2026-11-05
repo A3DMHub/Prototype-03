@@ -6,15 +6,22 @@ public class BehaviourActive_Bomb : ActiveWeaponBehaviour
 {
     private bool hasExploded;
     private float explosionLifetime = 0.25f;
+    public float explosionTime = 5.0f;
 
     protected override void Start()
     {
         base.Start();
+        weaponData.destroyTime = explosionTime;
     }
 
     void Update()
     {
-        transform.position += direction * weaponData.speed * Time.deltaTime;
+        //transform.position += direction * weaponData.speed * Time.deltaTime;
+        explosionTime -= Time.deltaTime;
+        if (explosionTime  < 0)
+        {
+            Explode();
+        }
     }
 
     protected override void OnLifetimeExpired()

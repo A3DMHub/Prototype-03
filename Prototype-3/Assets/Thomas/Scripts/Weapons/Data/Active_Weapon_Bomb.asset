@@ -18,7 +18,7 @@ MonoBehaviour:
   damage: 100
   cooldown: 2
   windUpTime: 3
-  destroyTime: 1
+  destroyTime: 10
   range: 5
   speed: 10
   projectileCount: 1
