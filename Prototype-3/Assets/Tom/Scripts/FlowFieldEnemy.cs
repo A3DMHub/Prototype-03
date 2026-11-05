@@ -17,6 +17,9 @@ public class FlowFieldEnemy : MonoBehaviour
     public int maxHealth = 100;
     private int currentHealth;
 
+    [Header("Resources")]
+    public GameObject resourceDropPrefab;
+
     private Transform cachedTransform;
     private float individualSpeed;
     private float individualTurnSpeed;
@@ -50,6 +53,7 @@ public class FlowFieldEnemy : MonoBehaviour
     private void OnDisable()
     {
         if (!registered) return;
+
         ActiveEnemies.Remove(this);
         registered = false;
     }
@@ -66,7 +70,10 @@ public class FlowFieldEnemy : MonoBehaviour
 
     private void KillEnemy()
     {
-        //Change this if we want to add a ragdoll
+        if (resourceDropPrefab != null)
+        {
+            Instantiate(resourceDropPrefab, cachedTransform.position, Quaternion.identity);   
+        }
         Destroy(gameObject);
     }
 }

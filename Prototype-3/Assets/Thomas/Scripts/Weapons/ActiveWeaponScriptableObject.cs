@@ -6,6 +6,7 @@ using UnityEngine;
 public class ActiveWeaponScriptableObject : ScriptableObject
 {
     public GameObject prefab;
+    public string weaponName;
     public GameObject explosionPrefab;
 
     [Header("Stats")]
@@ -19,6 +20,10 @@ public class ActiveWeaponScriptableObject : ScriptableObject
     public int projectileSpread; // the angle spread of the projectiles
     public bool followPlayerDir; // if the weapon uses the player's rotation/direction or not
     public float attackDir; // the direction the weapon is facing when attacking if followPlayerDir is false (0 = up, 90 = right, 180 = down, 270 = left)
+
+    [Header("Upgrades")]
+    public int upgradeTier;
+    public List<WeaponUpgradeBasic> upgrades;
 
     [Header("Misc Settings")]
     public float currentCooldown;

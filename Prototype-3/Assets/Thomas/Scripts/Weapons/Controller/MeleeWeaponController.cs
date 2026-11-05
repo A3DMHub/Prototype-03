@@ -11,11 +11,14 @@ public class MeleeWeaponController : MonoBehaviour
 
     protected virtual void Start()
     {
+        weaponData.upgradeTier = 0;
         weaponData.currentCooldown = 0f; // attack immediately 
     }
 
     protected virtual void Update()
     {
+        if (Time.timeScale == 0f) return;
+        
         weaponData.currentCooldown -= Time.deltaTime;
         if (weaponData.currentCooldown <= 0)
         {
