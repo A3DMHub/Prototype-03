@@ -131,6 +131,7 @@ MonoBehaviour:
   flowField: {fileID: 0}
   moveSpeed: 3.5
   turnSpeed: 8
+  maxHealth: 100
   resourceDropPrefab: {fileID: 6924175201871458723, guid: aa9f1252f98e0974a892f77a9d47ac16, type: 3}
 --- !u!54 &156614172321077213
 Rigidbody:
@@ -157,5 +158,5 @@ Rigidbody:
   m_UseGravity: 1
   m_IsKinematic: 0
   m_Interpolate: 0
-  m_Constraints: 0
+  m_Constraints: 116
   m_CollisionDetection: 0

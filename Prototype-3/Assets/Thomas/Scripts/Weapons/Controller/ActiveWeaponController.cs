@@ -20,7 +20,11 @@ public class ActiveWeaponController : MonoBehaviour
     protected virtual void Start()
     {
         weaponData.upgradeTier = 0;
-        weaponData.currentCooldown = 0f; // attack immediately 
+        weaponData.currentCooldown = 0f; // attack immediately
+        if(weaponData.cooldown <= 0f)
+        {
+            weaponData.cooldown = 0.1f;
+        }
     }
 
     protected virtual void Update()
