@@ -17,13 +17,6 @@ public class RatPathScript : MonoBehaviour
     void Update()
     {
         Distance = Vector3.Distance(RatAgent.transform.position, Target.transform.position);
-        if (Distance > 5 )
-        {
-            RatAgent.destination = Target.transform.position;
-        }
-        else
-        {
-            Destroy(this.gameObject);
-        }
+        RatAgent.destination = Target.transform.position;
     }
 }
