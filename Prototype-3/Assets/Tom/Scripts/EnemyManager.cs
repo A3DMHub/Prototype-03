@@ -22,7 +22,6 @@ public struct SteeringJob : IJobParallelFor
     public NativeArray<float3> Directions;
     public NativeArray<quaternion> TargetRotations;
 
-    // Flow field snapshot
     [ReadOnly] public NativeArray<byte> Walkable;
     [ReadOnly] public NativeArray<float3> FlowDirections;
     [ReadOnly] public NativeArray<int> Distances;
@@ -36,11 +35,20 @@ public struct SteeringJob : IJobParallelFor
     public byte DirectSteeringEnabled;
     public int DirectLineSamples;
 
-    // Aggro sources (weapons, lures). Checked before the flow field.
     [ReadOnly] public NativeArray<AggroSourceData> AggroSources;
     public int AggroSourceCount;
 
-    // Spatial grid snapshot
+    public byte AttackEnabled;
+    public float3 PlayerPosition;
+    public float AttackRangeSqr;
+    public float DamagePerHit;
+    public float AttackInterval;
+    public float CurrentTime;
+    public byte DamagesWhileAggroed;
+
+    public NativeArray<float> AttackCooldowns;
+    [WriteOnly] public NativeArray<float> DamageOutput;
+
     [ReadOnly] public NativeArray<int> CellStart;
     [ReadOnly] public NativeArray<int> SortedIndices;
     public float3 SpatialOrigin;
@@ -48,7 +56,6 @@ public struct SteeringJob : IJobParallelFor
     public int SpatialWidth;
     public int SpatialHeight;
 
-    // Steering tunables
     public float NeighbourRadius;
     public float MinimumSpacing;
     public float SeparationStrength;
@@ -56,13 +63,12 @@ public struct SteeringJob : IJobParallelFor
     public float WanderStrength;
     public float DirectSteeringWeight;
     public float Time;
-
-    // Reduces diagonal convergence by pulling interpolated directions
-    // toward the dominant cardinal axis. 1.0 = no bias, 0.0 = fully cardinal.
     public float DiagonalSuppressionFactor;
 
     public void Execute(int i)
     {
+        DamageOutput[i] = 0f;
+
         if (Statics[i].Valid == 0)
         {
             Directions[i] = float3.zero;
@@ -79,19 +85,17 @@ public struct SteeringJob : IJobParallelFor
 
         float3 position = Positions[i];
         float3 steeringBase;
+        bool isAggroed = false;
 
-        // Aggro sources take priority over the player. If one is in range
-        // and has line of sight, beeline to it instead of using the flow field.
-        if (AggroSourceCount > 0 &&
-            TryGetAggroTarget(position, out float3 aggroTarget))
+        if (AggroSourceCount > 0 && TryGetAggroTarget(position, out float3 aggroTarget))
         {
+            isAggroed = true;
             float3 toTarget = aggroTarget - position;
             toTarget.y = 0f;
             float sqr = math.lengthsq(toTarget);
 
             if (sqr < 0.0001f)
             {
-                // On top of the target; stop moving.
                 Directions[i] = float3.zero;
                 TargetRotations[i] = quaternion.identity;
                 return;
@@ -101,18 +105,21 @@ public struct SteeringJob : IJobParallelFor
         }
         else
         {
-            // Existing player-tracking logic, unchanged.
             float3 flow = SampleFlow(position);
             steeringBase = flow;
 
             if (DirectSteeringEnabled == 1 &&
                 TryDirectDirection(position, out float3 direct))
             {
-                float w = math.saturate(DirectSteeringWeight);
-                if (math.lengthsq(flow) > 0.0001f)
-                    steeringBase = math.lerp(flow, direct, w);
-                else
-                    steeringBase = direct * w;
+                float agreement = math.dot(flow, direct);
+                if (agreement > 0.5f)
+                {
+                    float w = math.saturate(DirectSteeringWeight);
+                    if (math.lengthsq(flow) > 0.0001f)
+                        steeringBase = math.lerp(flow, direct, w);
+                    else
+                        steeringBase = direct * w;
+                }
             }
 
             if (math.lengthsq(steeringBase) > 0.0001f)
@@ -121,7 +128,19 @@ public struct SteeringJob : IJobParallelFor
                 steeringBase = flow;
         }
 
-        // Separation, wander, and output are the same for both modes.
+        if (AttackEnabled == 1 && (DamagesWhileAggroed == 1 || !isAggroed))
+        {
+            float3 toPlayer = PlayerPosition - position;
+            toPlayer.y = 0f;
+
+            if (math.lengthsq(toPlayer) <= AttackRangeSqr &&
+                AttackCooldowns[i] <= CurrentTime)
+            {
+                DamageOutput[i] = DamagePerHit;
+                AttackCooldowns[i] = CurrentTime + AttackInterval;
+            }
+        }
+
         float3 separation = ComputeSeparation(i, position);
 
         float3 lateral = new float3(-steeringBase.z, 0f, steeringBase.x);
@@ -149,7 +168,6 @@ public struct SteeringJob : IJobParallelFor
     private bool TryGetAggroTarget(float3 pos, out float3 target)
     {
         target = float3.zero;
-
         int bestPriority = int.MinValue;
         float bestSqr = float.MaxValue;
         bool found = false;
@@ -157,7 +175,6 @@ public struct SteeringJob : IJobParallelFor
         for (int s = 0; s < AggroSourceCount; s++)
         {
             AggroSourceData src = AggroSources[s];
-
             if (src.Priority < bestPriority) continue;
 
             float3 offset = src.Position - pos;
@@ -221,10 +238,8 @@ public struct SteeringJob : IJobParallelFor
             float ax = math.abs(result.x);
             float az = math.abs(result.z);
 
-            if (ax > az)
-                result.z *= suppress;
-            else if (az > ax)
-                result.x *= suppress;
+            if (ax > az) result.z *= suppress;
+            else if (az > ax) result.x *= suppress;
 
             lenSq = math.lengthsq(result);
             if (lenSq > 0.0001f)
@@ -243,13 +258,11 @@ public struct SteeringJob : IJobParallelFor
     private bool TryDirectDirection(float3 pos, out float3 direction)
     {
         direction = float3.zero;
-
         if (!IsWalkable(pos)) return false;
 
         int cellX = (int)math.floor((pos.x - FlowOrigin.x) * FlowInvCellSize);
         int cellZ = (int)math.floor((pos.z - FlowOrigin.z) * FlowInvCellSize);
-        if (cellX < 0 || cellX >= FlowWidth || cellZ < 0 || cellZ >= FlowHeight)
-            return false;
+        if (cellX < 0 || cellX >= FlowWidth || cellZ < 0 || cellZ >= FlowHeight) return false;
 
         int cellDist = Distances[cellZ * FlowWidth + cellX];
         if (cellDist == int.MaxValue) return false;
@@ -263,7 +276,7 @@ public struct SteeringJob : IJobParallelFor
         direction = toTarget / dist;
 
         float estimatedCost = dist * FlowInvCellSize * 100f;
-        if (cellDist > estimatedCost * 1.15f + 200f) return false;
+        if (cellDist > estimatedCost * 1.02f + 100f) return false;
 
         return IsLineWalkable(pos, FlowTargetPosition);
     }
@@ -367,6 +380,21 @@ public struct SteeringJob : IJobParallelFor
 }
 
 [BurstCompile]
+public struct DamageSumJob : IJob
+{
+    [ReadOnly] public NativeArray<float> DamageOutput;
+    public int Count;
+    public NativeArray<float> Total;
+
+    public void Execute()
+    {
+        float sum = 0f;
+        for (int i = 0; i < Count; i++) sum += DamageOutput[i];
+        Total[0] = sum;
+    }
+}
+
+[BurstCompile]
 public struct MoveJob : IJobParallelForTransform
 {
     [ReadOnly] public NativeArray<EnemyStaticData> Statics;
@@ -375,7 +403,6 @@ public struct MoveJob : IJobParallelForTransform
 
     [NativeDisableParallelForRestriction] public NativeArray<float3> Positions;
 
-    // Flow field snapshot (walkability only)
     [ReadOnly] public NativeArray<byte> Walkable;
     public float3 FlowOrigin;
     public float FlowInvCellSize;
@@ -383,7 +410,6 @@ public struct MoveJob : IJobParallelForTransform
     public int FlowHeight;
     public byte FlowReady;
 
-    // Spatial grid snapshot
     [ReadOnly] public NativeArray<int> CellStart;
     [ReadOnly] public NativeArray<int> SortedIndices;
     public float3 SpatialOrigin;
@@ -406,16 +432,48 @@ public struct MoveJob : IJobParallelForTransform
         float3 position = Positions[i];
         float speed = Statics[i].MoveSpeed;
 
-        float3 proposed = position + direction * speed * DeltaTime;
+        float3 baseMove = direction * speed * DeltaTime;
+        float3 proposed = position + baseMove;
 
         if (EnableOverlapResolution == 1)
             proposed = ResolveOverlaps(i, proposed);
 
         if (FlowReady == 1 && !IsWalkable(proposed))
         {
-            float3 fallback = position + direction * speed * DeltaTime;
-            if (IsWalkable(fallback)) proposed = fallback;
-            else proposed = position;
+            float3 perpendicularL = new float3(-direction.z, 0f, direction.x);
+            float3 perpendicularR = new float3(direction.z, 0f, -direction.x);
+
+            bool found = false;
+            float3 candidate;
+
+            candidate = position + baseMove * 0.5f;
+            if (IsWalkable(candidate)) { proposed = candidate; found = true; }
+
+            if (!found)
+            {
+                candidate = position + perpendicularL * speed * DeltaTime;
+                if (IsWalkable(candidate)) { proposed = candidate; found = true; }
+            }
+
+            if (!found)
+            {
+                candidate = position + perpendicularR * speed * DeltaTime;
+                if (IsWalkable(candidate)) { proposed = candidate; found = true; }
+            }
+
+            if (!found)
+            {
+                candidate = position + perpendicularL * speed * DeltaTime * 0.5f;
+                if (IsWalkable(candidate)) { proposed = candidate; found = true; }
+            }
+
+            if (!found)
+            {
+                candidate = position + perpendicularR * speed * DeltaTime * 0.5f;
+                if (IsWalkable(candidate)) { proposed = candidate; found = true; }
+            }
+
+            if (!found) proposed = position;
         }
 
         Positions[i] = proposed;
@@ -505,12 +563,17 @@ public class EnemyManager : MonoBehaviour
     [SerializeField, Min(0f)] private float wanderStrength = 0.035f;
 
     [Header("Diagonal Convergence Control")]
-    [Tooltip("1 = no bias (smooth, but drifts onto diagonal lines). 0 = fully cardinal. 0.5-0.7 recommended.")]
     [SerializeField, Range(0f, 1f)] private float diagonalSuppressionFactor = 0.6f;
 
     [Header("Immediate Target Steering")]
     [SerializeField, Range(0f, 1f)] private float directTargetSteeringWeight = 1f;
     [SerializeField, Min(4)] private int directLineSamples = 24;
+
+    [Header("Attack")]
+    [SerializeField, Min(0.1f)] private float attackRange = 1.5f;
+    [SerializeField, Min(0f)] private float damagePerHit = 5f;
+    [SerializeField, Min(0.05f)] private float attackInterval = 1f;
+    [SerializeField] private bool damagesPlayerWhileAggroed = false;
 
     [Header("Performance")]
     [SerializeField] private bool enableOverlapResolution = true;
@@ -523,10 +586,13 @@ public class EnemyManager : MonoBehaviour
     private NativeArray<float3> directions;
     private NativeArray<quaternion> targetRotations;
 
+    private NativeArray<float> attackCooldowns;
+    private NativeArray<float> damageOutput;
+    private NativeArray<float> damageTotal;
+
     private NativeArray<AggroSourceData> aggroSourcesNative;
     private int cachedAggroSourceCount;
-    private readonly List<EnemyAggroSource> aggroSourcesBuffer =
-        new List<EnemyAggroSource>(16);
+    private readonly List<EnemyAggroSource> aggroSourcesBuffer = new List<EnemyAggroSource>(16);
 
     private int cachedCount = -1;
     private bool setupDirty;
@@ -536,13 +602,14 @@ public class EnemyManager : MonoBehaviour
     private FlowFieldGrid flowField;
     private EnemySpatialGrid spatialGrid;
 
+    // Player tracking (tag-based, no PlayerHealth dependency).
+    private GameObject cachedPlayerObject;
+    private Transform cachedPlayerTransform;
+    private bool playerLookupAttempted;
+
     private void OnDisable()
     {
-        if (hasOutstandingJob)
-        {
-            frameHandle.Complete();
-            hasOutstandingJob = false;
-        }
+        if (hasOutstandingJob) { frameHandle.Complete(); hasOutstandingJob = false; }
     }
 
     private void OnDestroy()
@@ -558,48 +625,49 @@ public class EnemyManager : MonoBehaviour
         if (!movementEnabled)
         {
             EnemyManagerPerformance.LastEnemyCount = FlowFieldEnemy.ActiveEnemies.Count;
-            EnemyManagerPerformance.LastUpdateMs =
-                (Time.realtimeSinceStartupAsDouble - startTime) * 1000.0;
+            EnemyManagerPerformance.LastUpdateMs = (Time.realtimeSinceStartupAsDouble - startTime) * 1000.0;
             return;
         }
 
-        if (hasOutstandingJob)
+        if (hasOutstandingJob) { frameHandle.Complete(); hasOutstandingJob = false; }
+
+        EnsurePlayerReference();
+
+        if (damageTotal.IsCreated)
         {
-            frameHandle.Complete();
-            hasOutstandingJob = false;
+            float damage = damageTotal[0];
+            if (damage > 0f && Time.timeScale > 0f && cachedPlayerObject != null)
+            {
+                // Calls PlayerHealth.TakeDamage(float) via reflection-free
+                // dynamic dispatch. No compile-time dependency on PlayerHealth.
+                cachedPlayerObject.SendMessage(
+                    "TakeDamage",
+                    damage,
+                    SendMessageOptions.DontRequireReceiver);
+            }
         }
 
         if (!EnsureSetup())
         {
             EnemyManagerPerformance.LastEnemyCount = FlowFieldEnemy.ActiveEnemies.Count;
-            EnemyManagerPerformance.LastUpdateMs =
-                (Time.realtimeSinceStartupAsDouble - startTime) * 1000.0;
+            EnemyManagerPerformance.LastUpdateMs = (Time.realtimeSinceStartupAsDouble - startTime) * 1000.0;
             return;
         }
 
-        // The flow field publishes its native arrays only after its first
-        // rebuild completes. Until then it holds unconstructed NativeArrays
-        // and we must not schedule any job that references them.
         flowField.PublishNativeNow();
 
         if (!flowField.HasNativeData)
         {
             EnemyManagerPerformance.LastEnemyCount = cachedCount;
-            EnemyManagerPerformance.LastUpdateMs =
-                (Time.realtimeSinceStartupAsDouble - startTime) * 1000.0;
+            EnemyManagerPerformance.LastUpdateMs = (Time.realtimeSinceStartupAsDouble - startTime) * 1000.0;
             return;
         }
 
-        // Refresh the aggro source list every frame. The NativeArray is
-        // guaranteed to exist (at least 4 slots) so the job safety check
-        // never sees an unconstructed container.
         UpdateAggroSources();
 
         FlowFieldSnapshot flowSnapshot = flowField.CreateSnapshot(directTargetSteeringWeight > 0f);
-
         flowSnapshot.DirectLineSamples = Mathf.Max(4, directLineSamples);
 
-        // Spatial grid must fit inside the flow field bounds.
         Vector3 fo = flowField.WorldOrigin;
         Vector2 fs = flowField.WorldSize;
         float bucket = spatialGrid.BucketSize;
@@ -611,8 +679,11 @@ public class EnemyManager : MonoBehaviour
         float deltaTime = Time.deltaTime;
         float time = Time.time;
 
-        var rebuildHandle = spatialGrid.ScheduleRebuild(
-            positions, statics, cachedCount, frameHandle);
+        bool attackEnabled = cachedPlayerTransform != null && Time.timeScale > 0f;
+        Vector3 playerPos = attackEnabled ? cachedPlayerTransform.position : Vector3.zero;
+        float3 playerPosF3 = new float3(playerPos.x, playerPos.y, playerPos.z);
+
+        var rebuildHandle = spatialGrid.ScheduleRebuild(positions, statics, cachedCount, frameHandle);
 
         var steeringJob = new SteeringJob
         {
@@ -636,6 +707,16 @@ public class EnemyManager : MonoBehaviour
 
             AggroSources = aggroSourcesNative,
             AggroSourceCount = cachedAggroSourceCount,
+
+            AttackEnabled = (byte)(attackEnabled ? 1 : 0),
+            PlayerPosition = playerPosF3,
+            AttackRangeSqr = attackRange * attackRange,
+            DamagePerHit = damagePerHit,
+            AttackInterval = attackInterval,
+            CurrentTime = time,
+            DamagesWhileAggroed = (byte)(damagesPlayerWhileAggroed ? 1 : 0),
+            AttackCooldowns = attackCooldowns,
+            DamageOutput = damageOutput,
 
             CellStart = spatialGrid.CellStart,
             SortedIndices = spatialGrid.SortedIndices,
@@ -683,21 +764,41 @@ public class EnemyManager : MonoBehaviour
             UseRotationAlignmentCheck = (byte)(useRotationAlignmentCheck ? 1 : 0)
         };
 
-        frameHandle = moveJob.Schedule(transformArray, steeringHandle);
+        JobHandle moveHandle = moveJob.Schedule(transformArray, steeringHandle);
+
+        var damageSumJob = new DamageSumJob
+        {
+            DamageOutput = damageOutput,
+            Count = cachedCount,
+            Total = damageTotal
+        };
+
+        JobHandle sumHandle = damageSumJob.Schedule(steeringHandle);
+
+        frameHandle = JobHandle.CombineDependencies(moveHandle, sumHandle);
         hasOutstandingJob = true;
 
         EnemyManagerPerformance.LastEnemyCount = cachedCount;
-        EnemyManagerPerformance.LastUpdateMs =
-            (Time.realtimeSinceStartupAsDouble - startTime) * 1000.0;
+        EnemyManagerPerformance.LastUpdateMs = (Time.realtimeSinceStartupAsDouble - startTime) * 1000.0;
     }
 
     private void LateUpdate()
     {
-        if (hasOutstandingJob)
-        {
-            frameHandle.Complete();
-            hasOutstandingJob = false;
-        }
+        if (hasOutstandingJob) { frameHandle.Complete(); hasOutstandingJob = false; }
+    }
+
+    private void EnsurePlayerReference()
+    {
+        if (cachedPlayerTransform != null) return;
+
+        // Only attempt lookup once per manager lifetime to avoid FindWithTag
+        // being called every frame if the player is genuinely missing.
+        if (playerLookupAttempted) return;
+        playerLookupAttempted = true;
+
+        cachedPlayerObject = GameObject.FindGameObjectWithTag("Player");
+        if (cachedPlayerObject != null)
+            cachedPlayerTransform = cachedPlayerObject.transform;
     }
 
     private void UpdateAggroSources()
@@ -708,22 +809,16 @@ public class EnemyManager : MonoBehaviour
         for (int i = 0; i < sources.Count; i++)
         {
             EnemyAggroSource src = sources[i];
-            if (src != null && src.isActiveAndEnabled)
-                aggroSourcesBuffer.Add(src);
+            if (src != null && src.isActiveAndEnabled) aggroSourcesBuffer.Add(src);
         }
 
         int count = aggroSourcesBuffer.Count;
-
-        // The array must always be created before scheduling the job, even
-        // if count is 0. Unity rejects jobs that reference unconstructed
-        // NativeArrays regardless of whether they are accessed.
         int neededCapacity = Mathf.Max(4, count);
 
         if (!aggroSourcesNative.IsCreated || aggroSourcesNative.Length < neededCapacity)
         {
             if (aggroSourcesNative.IsCreated) aggroSourcesNative.Dispose();
-            aggroSourcesNative = new NativeArray<AggroSourceData>(
-                neededCapacity, Allocator.Persistent);
+            aggroSourcesNative = new NativeArray<AggroSourceData>(neededCapacity, Allocator.Persistent);
         }
 
         for (int i = 0; i < count; i++)
@@ -751,8 +846,7 @@ public class EnemyManager : MonoBehaviour
             return false;
         }
 
-        if (!setupDirty && liveCount == cachedCount)
-            return true;
+        if (!setupDirty && liveCount == cachedCount) return true;
 
         if (flowField == null)
         {
@@ -774,6 +868,9 @@ public class EnemyManager : MonoBehaviour
         positions = new NativeArray<float3>(liveCount, Allocator.Persistent);
         directions = new NativeArray<float3>(liveCount, Allocator.Persistent);
         targetRotations = new NativeArray<quaternion>(liveCount, Allocator.Persistent);
+        attackCooldowns = new NativeArray<float>(liveCount, Allocator.Persistent);
+        damageOutput = new NativeArray<float>(liveCount, Allocator.Persistent);
+        damageTotal = new NativeArray<float>(1, Allocator.Persistent);
         transformArray = new TransformAccessArray(liveCount);
 
         for (int i = 0; i < liveCount; i++)
@@ -785,6 +882,8 @@ public class EnemyManager : MonoBehaviour
                 positions[i] = float3.zero;
                 directions[i] = float3.zero;
                 targetRotations[i] = quaternion.identity;
+                attackCooldowns[i] = 0f;
+                damageOutput[i] = 0f;
                 transformArray.Add(null);
                 continue;
             }
@@ -800,6 +899,8 @@ public class EnemyManager : MonoBehaviour
             positions[i] = new float3(p.x, p.y, p.z);
             directions[i] = float3.zero;
             targetRotations[i] = quaternion.identity;
+            attackCooldowns[i] = 0f;
+            damageOutput[i] = 0f;
             transformArray.Add(enemy.CachedTransform);
         }
 
@@ -809,17 +910,16 @@ public class EnemyManager : MonoBehaviour
 
     private void DisposeArrays()
     {
-        if (hasOutstandingJob)
-        {
-            frameHandle.Complete();
-            hasOutstandingJob = false;
-        }
+        if (hasOutstandingJob) { frameHandle.Complete(); hasOutstandingJob = false; }
 
         if (transformArray.isCreated) transformArray.Dispose();
         if (statics.IsCreated) statics.Dispose();
         if (positions.IsCreated) positions.Dispose();
         if (directions.IsCreated) directions.Dispose();
         if (targetRotations.IsCreated) targetRotations.Dispose();
+        if (attackCooldowns.IsCreated) attackCooldowns.Dispose();
+        if (damageOutput.IsCreated) damageOutput.Dispose();
+        if (damageTotal.IsCreated) damageTotal.Dispose();
         if (aggroSourcesNative.IsCreated) aggroSourcesNative.Dispose();
         cachedCount = -1;
         cachedAggroSourceCount = 0;
