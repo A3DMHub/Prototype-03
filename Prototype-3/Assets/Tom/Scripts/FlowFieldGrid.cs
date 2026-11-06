@@ -86,6 +86,7 @@ public class FlowFieldGrid : MonoBehaviour
     public Vector3 WorldOrigin => origin;
     public Vector2 WorldSize => gridWorldSize;
     public float CellSize => cellSize;
+    public LayerMask ObstacleMask => obstacleMask;
     public bool HasNativeData =>
     walkableNative.IsCreated &&
     directionsNative.IsCreated &&
