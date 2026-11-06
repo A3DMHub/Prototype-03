@@ -9,6 +9,9 @@ EditorBuildSettings:
     path: Assets/Adam/Scenes/MainMenuScene.unity
     guid: 98b14f52918b76142844183d21fe6e72
   - enabled: 1
+    path: Assets/Freyja/Scene/Prototype city.unity
+    guid: 0f80791871b0ec249b11cca2fab69ba7
+  - enabled: 0
     path: Assets/Scenes/SampleScene.unity
     guid: 99c9720ab356a0642a771bea13969a05
   m_configObjects:
