@@ -10,8 +10,7 @@ public class PlayerResourceController : MonoBehaviour
     public float expResource;
 
     [Header("UI")]
-    public Canvas timeResourceCanvas;
-    public Canvas expResourceCanvas;
+    public Canvas resourceCanvas;
     public Slider expBar;
     
     private PlayerHealth playerHealth;
@@ -20,7 +19,7 @@ public class PlayerResourceController : MonoBehaviour
     {
         playerHealth = GetComponent<PlayerHealth>();
         playerWeaponUpgradeController = GetComponent<PlayerWeaponUpgradeController>();
-        expBar = expResourceCanvas.transform.Find("PlayerEXPBar").gameObject.GetComponent<Slider>();
+        expBar = resourceCanvas.transform.Find("ResourceUI").Find("PlayerEXPBar").gameObject.GetComponent<Slider>();
     }
 
     void Update()
@@ -29,7 +28,7 @@ public class PlayerResourceController : MonoBehaviour
 
         timeResource -= Time.deltaTime;
         
-        timeResourceCanvas.transform.Find("Time").gameObject.GetComponent<TMPro.TextMeshProUGUI>().text = Mathf.RoundToInt(timeResource).ToString();
+        resourceCanvas.transform.Find("ResourceUI").Find("Time").gameObject.GetComponent<TMPro.TextMeshProUGUI>().text = Mathf.RoundToInt(timeResource).ToString();
 
         if (expBar != null)
         {
