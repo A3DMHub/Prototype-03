@@ -13,7 +13,7 @@ public class ActiveWeaponController : MonoBehaviour
     
     public GameObject player;
     public GameObject windUpEffectPrefab;
-    public bool canAttack = true;
+    public bool canAttack;
 
     private GameObject activeWindUpEffect;
 
@@ -44,10 +44,7 @@ public class ActiveWeaponController : MonoBehaviour
 
     private void LateUpdate()
     {
-        if (activeWindUpEffect == null)
-        {
-            return;
-        }
+        if (activeWindUpEffect == null) return;
 
         activeWindUpEffect.transform.position = player.transform.position + WindUpEffectOffset;
         activeWindUpEffect.transform.rotation = WindUpEffectRotation;

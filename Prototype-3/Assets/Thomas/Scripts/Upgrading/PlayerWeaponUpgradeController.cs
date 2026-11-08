@@ -30,8 +30,6 @@ public class PlayerWeaponUpgradeController : MonoBehaviour
     public void onLevelUp()
     {
         playerLevel++;
-
-        Debug.Log("[PlayerWeaponUpgradeController] Player level increased to: " + playerLevel);
         
         levelUpMenuScript.StartUI();
         Time.timeScale = 0f; // pause game so you dont die upgrading / getting weapons

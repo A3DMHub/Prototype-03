@@ -44,6 +44,8 @@ public class PlayerResourceController : MonoBehaviour
 
     void OnTriggerEnter(Collider other)
     {   
+        if (Time.timeScale == 0f) return; // dont pick up things while in the level up menu
+
         if (other.CompareTag("ResourcePickup"))
         {
             timeResource += other.GetComponent<ResourcePickup>().timeAmount;

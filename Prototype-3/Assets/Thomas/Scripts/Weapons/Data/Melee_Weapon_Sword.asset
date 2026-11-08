@@ -15,10 +15,14 @@ MonoBehaviour:
   prefab: {fileID: 3987477043170021866, guid: d24cf458f2b46b949ac6d90c2ee586ba, type: 3}
   weaponName: Sword
   damage: 100
-  cooldown: 1
-  destroyTime: 0.5
+  cooldown: 2
+  destroyTime: 0.2
+  attackCount: 1
   followPlayerDir: 1
   attackDir: 0
   upgradeTier: 0
-  upgrades: []
-  currentCooldown: 0
+  upgrades:
+  - {fileID: 11400000, guid: b66aeb0d2b89bfa4a9ff4aa103dc6e5e, type: 2}
+  - {fileID: 11400000, guid: f9839f2864a4eca439f5a105bb101c7c, type: 2}
+  - {fileID: 11400000, guid: 541f3ee6a72cace479f8a61a1a4d8d6a, type: 2}
+  currentCooldown: 0.39554015
