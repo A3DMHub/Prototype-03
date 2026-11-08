@@ -12,6 +12,7 @@ public class MeleeWeaponScriptableObject : ScriptableObject
     public float damage; // damage on hit
     public float cooldown; // time between attacks
     public float destroyTime; // weapon lifetime
+    public int attackCount; // how many attacks to do at once
     public bool followPlayerDir; // if the weapon uses the player's rotation/direction or not
     public float attackDir; // the direction the weapon is facing when attacking if followPlayerDir is false (0 = up, 90 = right, 180 = down, 270 = left)
 

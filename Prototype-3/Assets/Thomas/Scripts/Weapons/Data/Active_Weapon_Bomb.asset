@@ -26,5 +26,8 @@ MonoBehaviour:
   followPlayerDir: 1
   attackDir: 0
   upgradeTier: 0
-  upgrades: []
-  currentCooldown: 0.22635034
+  upgrades:
+  - {fileID: 11400000, guid: 4c4792972a15e654e8fd8c8a6e60d06e, type: 2}
+  - {fileID: 11400000, guid: f122934a712fb4d4dab61e127d447da6, type: 2}
+  - {fileID: 11400000, guid: fb35b516075878e49a1f5c45c6dc69bb, type: 2}
+  currentCooldown: 0

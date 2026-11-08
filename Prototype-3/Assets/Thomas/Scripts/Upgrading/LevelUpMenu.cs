@@ -10,6 +10,8 @@ public class LevelUpMenu : MonoBehaviour
 
     [Header("Buttons")]
     public GameObject Option1;
+    public GameObject Option2;
+    public GameObject Option3;
 
     public bool CanUpgrade = true;
 
@@ -24,8 +26,23 @@ public class LevelUpMenu : MonoBehaviour
     {
         GetWeapons();
 
-        Option1.GetComponent<ButtonTargetWeapon>().TargetWeapon = PlayerWeapons[Random.Range(0, PlayerWeapons.Count)];
+        List<GameObject> availableWeapons = PlayerWeapons;
+
+        int index1 = Random.Range(0, availableWeapons.Count);
+        Option1.GetComponent<ButtonTargetWeapon>().TargetWeapon = availableWeapons[index1];
+        availableWeapons.RemoveAt(index1);
         UpdateButton(Option1);
+
+        int index2 = Random.Range(0, availableWeapons.Count);
+        Option2.GetComponent<ButtonTargetWeapon>().TargetWeapon = availableWeapons[index2];
+        availableWeapons.RemoveAt(index2);
+        UpdateButton(Option2);
+
+        int index3 = Random.Range(0, availableWeapons.Count);
+        Option3.GetComponent<ButtonTargetWeapon>().TargetWeapon = availableWeapons[index3];
+        availableWeapons.RemoveAt(index3);
+        UpdateButton(Option3);
+        // probably a better way to do above
 
         Container.SetActive(true);
     }
@@ -41,10 +58,20 @@ public class LevelUpMenu : MonoBehaviour
 
         string weaponName = (string)weaponNameField.GetValue(weaponData);
         int upgradeTier = (int)upgradeTierField.GetValue(weaponData);
+        string upgradeDescription;
         List<WeaponUpgradeBasic> upgrades = (List<WeaponUpgradeBasic>)upgradesField.GetValue(weaponData);
 
+        if (WeaponController.activeInHierarchy)
+        {
+            upgradeDescription = upgrades[upgradeTier].upgradeDescription;
+        }
+        else
+        {
+            upgradeDescription = "Unlocks this weapon.";
+        }
+
         button.transform.Find("WeaponName").GetComponent<TMPro.TextMeshProUGUI>().text = weaponName;
-        button.transform.Find("UpgradeDetails").GetComponent<TMPro.TextMeshProUGUI>().text = upgrades[upgradeTier].upgradeDescription;
+        button.transform.Find("UpgradeDetails").GetComponent<TMPro.TextMeshProUGUI>().text = upgradeDescription;
     } 
     public void CloseUI()
     {
@@ -56,69 +83,55 @@ public class LevelUpMenu : MonoBehaviour
     {
         GameObject WeaponController = button.GetComponent<ButtonTargetWeapon>().TargetWeapon;
         object weaponData = GetWeaponData(WeaponController);
-        UpgradeWeapon(weaponData);
+        UpgradeWeapon(weaponData, WeaponController);
     }
 
-    public void UpgradeWeapon(object weaponData)
+    public void UpgradeWeapon(object weaponData, GameObject weapon)
     {
         if (!CanUpgrade) return;
 
         CanUpgrade = false;
 
-        if (weaponData == null)
-        {
-            Debug.LogWarning("[LevelUpMenu] Cannot upgrade a weapon without weapon data.");
-            return;
-        }
+        if (weaponData == null) return;
 
-        System.Type weaponDataType = weaponData.GetType();
-        FieldInfo weaponNameField = weaponDataType.GetField("weaponName");
-        FieldInfo upgradeTierField = weaponDataType.GetField("upgradeTier");
-        FieldInfo upgradesField = weaponDataType.GetField("upgrades");
-        if (weaponNameField == null || upgradeTierField == null || upgradesField == null)
+        if (!weapon.activeInHierarchy)
         {
-            Debug.LogWarning("[LevelUpMenu] Weapon data is missing weaponName, upgradeTier, or upgrades.");
-            return;
-        }
-
-        string weaponName = (string)weaponNameField.GetValue(weaponData);
-        int upgradeTier = (int)upgradeTierField.GetValue(weaponData);
-        List<WeaponUpgradeBasic> upgrades = (List<WeaponUpgradeBasic>)upgradesField.GetValue(weaponData);
-
-        upgradeTierField.SetValue(weaponData, upgradeTier + 1);
-        if (upgrades == null || upgradeTier < 0 || upgrades[upgradeTier] == null)
-        {
-            Debug.LogWarning("[LevelUpMenu] No upgrade available for " + weaponName + " at tier " + upgradeTier);
-            return;
-        }
-
-        WeaponUpgradeBasic upgrade = upgrades[upgradeTier];
-        if (string.IsNullOrEmpty(upgrade.upgradeStat))
-        {
-            Debug.LogWarning("[LevelUpMenu] Upgrade for " + weaponName + " has no stat configured.");
-            return;
-        }
-
-        FieldInfo statField = weaponDataType.GetField(upgrade.upgradeStat);
-        if (statField == null)
-        {
-            Debug.LogWarning("[LevelUpMenu] Upgrade stat '" + upgrade.upgradeStat + "' was not found on " + weaponName);
-            return;
-        }
-
-        object currentValue = statField.GetValue(weaponData);
-        if (statField.FieldType == typeof(float))
-        {
-            statField.SetValue(weaponData, (float)currentValue + upgrade.upgradeAmount);
-        }
-        else if (statField.FieldType == typeof(int))
-        {
-            statField.SetValue(weaponData, Mathf.RoundToInt((int)currentValue + upgrade.upgradeAmount));
+            weapon.SetActive(true);
         }
         else
         {
-            Debug.LogWarning("[LevelUpMenu] Upgrade stat '" + upgrade.upgradeStat + "' is not a supported numeric field.");
-            return;
+            System.Type weaponDataType = weaponData.GetType();
+            FieldInfo weaponNameField = weaponDataType.GetField("weaponName");
+            FieldInfo upgradeTierField = weaponDataType.GetField("upgradeTier");
+            FieldInfo upgradesField = weaponDataType.GetField("upgrades");
+            if (weaponNameField == null || upgradeTierField == null || upgradesField == null) return;
+
+            string weaponName = (string)weaponNameField.GetValue(weaponData);
+            int upgradeTier = (int)upgradeTierField.GetValue(weaponData);
+            List<WeaponUpgradeBasic> upgrades = (List<WeaponUpgradeBasic>)upgradesField.GetValue(weaponData);
+
+            upgradeTierField.SetValue(weaponData, upgradeTier + 1);
+            if (upgrades == null || upgradeTier < 0 || upgrades[upgradeTier] == null) return;
+
+            WeaponUpgradeBasic upgrade = upgrades[upgradeTier];
+            if (string.IsNullOrEmpty(upgrade.upgradeStat)) return;
+
+            FieldInfo statField = weaponDataType.GetField(upgrade.upgradeStat);
+            if (statField == null) return;
+
+            object currentValue = statField.GetValue(weaponData);
+            if (statField.FieldType == typeof(float))
+            {
+                statField.SetValue(weaponData, (float)currentValue + upgrade.upgradeAmount);
+            }
+            else if (statField.FieldType == typeof(int))
+            {
+                statField.SetValue(weaponData, Mathf.RoundToInt((int)currentValue + upgrade.upgradeAmount));
+            }
+            else
+            {
+                return;
+            }
         }
 
         CanUpgrade = true;
@@ -151,7 +164,6 @@ public class LevelUpMenu : MonoBehaviour
             }
         }
 
-        Debug.LogWarning("[LevelUpMenu] No component with a weaponData field or property found on " + weaponController.name);
         return null;
     }
 
@@ -160,10 +172,7 @@ public class LevelUpMenu : MonoBehaviour
         for (int i = 0; i < PlayerWeaponContainer.transform.childCount; i++)
         {
             GameObject weapon = PlayerWeaponContainer.transform.GetChild(i).gameObject;
-            if (weapon.activeInHierarchy)
-            {
-                PlayerWeapons.Add(weapon);
-            }
+            PlayerWeapons.Add(weapon);
         }
     }
 }

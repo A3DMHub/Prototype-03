@@ -10,6 +10,11 @@ public class MeleeWeaponBehaviour : MonoBehaviour
     protected Vector3 direction;
     protected virtual void Start()
     {
+        if (weaponData.cooldown < weaponData.destroyTime)
+        {
+            weaponData.destroyTime = weaponData.cooldown;
+        }
+        
         Destroy(gameObject, weaponData.destroyTime);
     }
 
@@ -17,13 +22,17 @@ public class MeleeWeaponBehaviour : MonoBehaviour
     {
         direction = dir;
 
-        transform.localPosition = new Vector3(0, 0, 1.5f);
-
         Vector3 flatDirection = Vector3.ProjectOnPlane(direction, Vector3.up);
         if (flatDirection.sqrMagnitude < 0.0001f)
         {
+            transform.localPosition = Vector3.forward * 1.5f;
             return;
         }
+
+        Vector3 localDirection = transform.parent != null
+            ? transform.parent.InverseTransformDirection(flatDirection)
+            : flatDirection;
+        transform.localPosition = localDirection.normalized * 1.5f;
 
         float yaw = Vector3.SignedAngle(Vector3.left, flatDirection.normalized, Vector3.up);
         Quaternion flatSpriteRotation = Quaternion.Euler(-90f, 90f, 0f);
