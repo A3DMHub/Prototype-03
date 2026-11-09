@@ -7,11 +7,13 @@ public class TimingScript : MonoBehaviour
     //public float TimeAdd = 50;
     
     public float TimeDecreaseSpeed = 1;
+
+    public float startTime = 20;
     
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
-        WindUp(99);
+        WindUp(startTime - 1);
     }
 
 
@@ -19,7 +21,7 @@ public class TimingScript : MonoBehaviour
     void Update()
     {
         TimeRemaining -= TimeDecreaseSpeed*Time.deltaTime;
-        TimeRemaining = Mathf.Clamp(TimeRemaining, 0, 100);
+        TimeRemaining = Mathf.Clamp(TimeRemaining, 0, startTime);
         Debug.Log(TimeRemaining);
 
         if (TimeRemaining <= 0)
